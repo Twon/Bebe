@@ -1,0 +1,9 @@
+{
+    "os" : "ubuntu",
+    "versions" : {
+        "cmake" : "3.22.3",
+        "doxygen" : "1.9.3",
+        "openssl" : "1.1.1m",
+        "lcov" : "1.15"
+    }
+}
