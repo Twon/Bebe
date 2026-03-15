@@ -9,11 +9,11 @@
    cd bebe
    ```
 
-2. Install Conan
+2. Install Bebe's dependencie to a virtual environement
    ```
-   python3 -m venv .venv         # Create a Python virtual env
-   source ./.venv/bin/activate   # Activate the virtual env
-   pip install conan             # Install conan
+   python3 -m venv .venv           # Create a Python virtual env
+   source ./.venv/bin/activate     # Activate the virtual env
+   pip install -r requirements.txt # Install Bebe's required dependencies
    ```
 ## Docker Set Up
 

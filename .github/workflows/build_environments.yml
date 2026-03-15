@@ -1,0 +1,78 @@
+name: Build Environment Images
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'configs/**'
+      - 'images/**'
+      - 'bebe.py'
+      - '.github/workflows/build_environments.yml'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'configs/**'
+      - 'images/**'
+      - 'bebe.py'
+      - '.github/workflows/build_environments.yml'
+  workflow_dispatch:
+
+jobs:
+  discover-configs:
+    name: Discover Configurations
+    runs-on: ubuntu-latest
+    outputs:
+      configs: ${{ steps.set-configs.outputs.configs }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Find all configurations
+        id: set-configs
+        # Find all .json files in configs/ and output as a JSON array
+        run: |
+          CONFIGS=$(find configs/ -name "*.json" -printf '"%p", ' | sed 's/, $//')
+          echo "configs=[$CONFIGS]" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.config }}
+    needs: discover-configs
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: ${{ fromJson(needs.discover-configs.outputs.configs) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          # Ensure Jinja2 is installed for the bebe script
+          pip install Jinja2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Environment Image
+        run: |
+          python bebe.py build --config ${{ matrix.config }} --verbose
+
+      # TODO uncomment and configure when pushing to a registry is needed
+      # - name: Log in to Docker Hub
+      #   uses: docker/login-action@v3
+      #   with:
+      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      # - name: Push Environment Image
+      #   run: |
+      #     python bebe.py upload --config ${{ matrix.config }} --verbose
