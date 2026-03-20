@@ -110,30 +110,34 @@ def run_download(args):
         sys.exit(1)
 
 def main():
-    parser = argparse.ArgumentParser(description='BEBE: Bleeding Edge Build Environment Generator')
-    parser.add_argument('-e', '--engine', default='docker', choices=['docker', 'podman'], 
+    # Shared parent parser so flags work before OR after the subcommand
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument('-e', '--engine', default='docker', choices=['docker', 'podman'], 
                         help='Container engine to use (default: docker)')
-    parser.add_argument('-v', '--verbose', action='store_true', help='Display verbose diagnostic information')
+    common.add_argument('-v', '--verbose', action='store_true', help='Display verbose diagnostic information')
+
+    parser = argparse.ArgumentParser(description='BEBE: Bleeding Edge Build Environment Generator',
+                                     parents=[common])
     
     subparsers = parser.add_subparsers(dest='command', required=True, help='Commands')
 
     # Build command
-    parser_build = subparsers.add_parser('build', help='Build the container image')
+    parser_build = subparsers.add_parser('build', parents=[common], help='Build the container image')
     parser_build.add_argument('--config', required=True, help='Configuration JSON file')
     parser_build.set_defaults(func=run_build)
 
     # Shell command
-    parser_shell = subparsers.add_parser('shell', help='Launch an interactive shell in the image')
+    parser_shell = subparsers.add_parser('shell', parents=[common], help='Launch an interactive shell in the image')
     parser_shell.add_argument('--config', required=True, help='Configuration JSON file')
     parser_shell.set_defaults(func=run_shell)
 
     # Upload command
-    parser_upload = subparsers.add_parser('upload', help='Push the image to the registry')
+    parser_upload = subparsers.add_parser('upload', parents=[common], help='Push the image to the registry')
     parser_upload.add_argument('--config', required=True, help='Configuration JSON file')
     parser_upload.set_defaults(func=run_upload)
 
     # Download command
-    parser_download = subparsers.add_parser('download', help='Pull the image from the registry')
+    parser_download = subparsers.add_parser('download', parents=[common], help='Pull the image from the registry')
     parser_download.add_argument('--config', required=True, help='Configuration JSON file')
     parser_download.set_defaults(func=run_download)
 
