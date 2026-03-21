@@ -23,7 +23,7 @@ COPY --from=build_stage /opt/clang-{{ params.compiler.version }} /opt/clang-{{ p
 ENV CC=/opt/clang-{{ params.compiler.version }}/bin/clang
 ENV CXX=/opt/clang-{{ params.compiler.version }}/bin/clang++
 
-RUN echo "/opt/clang-{{ params.compiler.version }}/lib" > /etc/ld.so.conf.d/clang-{{ params.compiler.version }}.conf && \
+RUN echo "/opt/clang-{{ params.compiler.version }}/lib" > /etc/ld.so.conf.d/clang-{{ params.compiler.version | replace('/', '-') }}.conf && \
     ldconfig
 
 ENV PATH=/opt/clang-{{ params.compiler.version }}/bin:$PATH

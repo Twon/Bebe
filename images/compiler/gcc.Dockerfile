@@ -24,7 +24,7 @@ ENV CC=/opt/gcc-{{ params.compiler.version }}/bin/gcc
 ENV CXX=/opt/gcc-{{ params.compiler.version }}/bin/g++
 
 # Configure dynamic linker for sanitized builds and libstdc++
-RUN echo "/opt/gcc-{{ params.compiler.version }}/lib64" > /etc/ld.so.conf.d/gcc-{{ params.compiler.version }}.conf && \
+RUN echo "/opt/gcc-{{ params.compiler.version }}/lib64" > /etc/ld.so.conf.d/gcc-{{ params.compiler.version | replace('/', '-') }}.conf && \
     ldconfig
 
 ENV PATH=/opt/gcc-{{ params.compiler.version }}/bin:$PATH
