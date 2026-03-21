@@ -4,7 +4,7 @@
 {% macro build(params) %}
 # Clone and build GCC from source
 # The version config acts as the branch/tag to checkout
-RUN git clone --depth 1 --branch {{ params.compiler.version }} git://gcc.gnu.org/git/gcc.git /tmp/gcc && \
+RUN git clone --depth 1 --branch {{ params.compiler.version }} https://gcc.gnu.org/git/gcc.git /tmp/gcc && \
     cd /tmp/gcc && \
     ./contrib/download_prerequisites && \
     mkdir build && \
@@ -24,7 +24,7 @@ ENV CC=/opt/gcc-{{ params.compiler.version }}/bin/gcc
 ENV CXX=/opt/gcc-{{ params.compiler.version }}/bin/g++
 
 # Configure dynamic linker for sanitized builds and libstdc++
-RUN echo "/opt/gcc-{{ params.compiler.version }}/lib64" > /etc/ld.so.conf.d/gcc-{{ params.compiler.version }}.conf && \
+RUN echo "/opt/gcc-{{ params.compiler.version }}/lib64" > /etc/ld.so.conf.d/gcc-{{ params.compiler.version | replace('/', '-') }}.conf && \
     ldconfig
 
 ENV PATH=/opt/gcc-{{ params.compiler.version }}/bin:$PATH

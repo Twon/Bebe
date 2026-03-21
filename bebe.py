@@ -14,10 +14,15 @@ import jinja2
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-def get_image_tag(config_path: str, config: dict) -> str:
-    """Generate a tag for the image based on the config file name (e.g. ubuntu.clang14)"""
+def get_image_tag(config_path: str, registry: str = None) -> str:
+    """Generate a tag for the image based on the config file name and optional registry."""
     config_name = Path(config_path).stem
-    return f"bebe:{config_name}"
+    if registry:
+        prefix = registry if registry.endswith('/') else f"{registry}/"
+        tag = f"{prefix}bebe:{config_name}"
+    else:
+        tag = f"bebe:{config_name}"
+    return tag.lower()
 
 def generate_dockerfile(config_path: str) -> str:
     """Reads the JSON config and generates the Dockerfile content."""
@@ -40,7 +45,7 @@ def run_build(args):
     with open(args.config) as f:
         config = json.loads(f.read())
         
-    tag = get_image_tag(args.config, config)
+    tag = get_image_tag(args.config, getattr(args, 'registry', None))
     dockerfile_content = generate_dockerfile(args.config)
     
     if args.verbose:
@@ -62,7 +67,7 @@ def run_shell(args):
     with open(args.config) as f:
         config = json.loads(f.read())
         
-    tag = get_image_tag(args.config, config)
+    tag = get_image_tag(args.config, getattr(args, 'registry', None))
     
     # Add a BEBE motd/prompt modification when entering the shell
     bash_cmd = (
@@ -83,7 +88,7 @@ def run_upload(args):
     """Pushes the image to a remote registry."""
     with open(args.config) as f:
         config = json.loads(f.read())
-    tag = get_image_tag(args.config, config)
+    tag = get_image_tag(args.config, getattr(args, 'registry', None))
     
     logging.info(f"Uploading '{tag}' using {args.engine}...")
     cmd = [args.engine, "push", tag]
@@ -98,7 +103,7 @@ def run_download(args):
     """Pulls the image from a remote registry."""
     with open(args.config) as f:
         config = json.loads(f.read())
-    tag = get_image_tag(args.config, config)
+    tag = get_image_tag(args.config, getattr(args, 'registry', None))
     
     logging.info(f"Downloading '{tag}' using {args.engine}...")
     cmd = [args.engine, "pull", tag]
@@ -115,6 +120,7 @@ def main():
     common.add_argument('-e', '--engine', default='docker', choices=['docker', 'podman'], 
                         help='Container engine to use (default: docker)')
     common.add_argument('-v', '--verbose', action='store_true', help='Display verbose diagnostic information')
+    common.add_argument('--registry', help='Container registry prefix (e.g. ghcr.io/twon/)')
 
     parser = argparse.ArgumentParser(description='BEBE: Bleeding Edge Build Environment Generator',
                                      parents=[common])
