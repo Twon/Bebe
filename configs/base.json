@@ -1,0 +1,10 @@
+{
+    "abstract": true,
+    "os": "ubuntu:24.04",
+    "versions": {
+        "cmake": "3.30.0",
+        "doxygen": "1.10.0",
+        "openssl": "3.3.0",
+        "lcov": "2.1"
+    }
+}
