@@ -19,8 +19,10 @@ def get_image_tag(config_path: str, registry: str = None) -> str:
     config_name = Path(config_path).stem
     if registry:
         prefix = registry if registry.endswith('/') else f"{registry}/"
-        return f"{prefix}bebe:{config_name}"
-    return f"bebe:{config_name}"
+        tag = f"{prefix}bebe:{config_name}"
+    else:
+        tag = f"bebe:{config_name}"
+    return tag.lower()
 
 def generate_dockerfile(config_path: str) -> str:
     """Reads the JSON config and generates the Dockerfile content."""
