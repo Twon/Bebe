@@ -1,45 +1,91 @@
 # BeBe: Bleeding Edge Build Environment
 
+BEBE is a flexible tool for generating and managing high-performance C++ build environments. It uses Jinja2 templates to dynamically generate Dockerfiles based on JSON configurations, allowing for easy management of different compiler versions and toolchains.
 
-## Build steps
+## Features
 
-1. Clone project
-   ```
-   git clone https://github.com/twon/bebe.git bebe
+- **Dynamic Dockerfile Generation**: Uses Jinja2 templates to build tailored Docker images.
+- **Multiprocess Builds**: Supports building Clang, GCC, and more from source.
+- **Configuration Inheritance**: Share common settings across multiple environments using base configurations.
+- **CI/CD Optimization**: Integrated with Docker Buildx and GitHub Actions (`gha`) caching for lightning-fast incremental builds.
+- **CLI Tool**: A unified `bebe.py` script for all build and management tasks.
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.12+
+- Docker or Podman
+- (Optional) Docker Buildx for advanced caching
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/twon/bebe.git
    cd bebe
    ```
 
-2. Install Bebe's dependencie to a virtual environement
+2. Set up the virtual environment:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   pip install -r requirements.txt
    ```
-   python3 -m venv .venv           # Create a Python virtual env
-   source ./.venv/bin/activate     # Activate the virtual env
-   pip install -r requirements.txt # Install Bebe's required dependencies
-   ```
-## Docker Set Up
 
-### For Mac OS
+## Configuration Inheritance
 
-https://apple.stackexchange.com/questions/373888/how-do-i-start-the-docker-daemon-on-macos
+BEBE supports configuration inheritance to reduce duplication. You can define a base configuration (e.g., `configs/base.json`) with common settings and inherit from it in specific environment configs.
 
-If you hit the following error when creating the docker machine then follow ensure the /tmp directory is writable by following the advice here : https://superuser.com/a/1136881
-```
-Failed to open a session for the virtual machine ubuntu.
-
-The virtual machine 'ubuntu' has terminated unexpectedly during startup with exit code 1 (0x1).
-
-Result Code: NS_ERROR_FAILURE (0x80004005)
-Component: MachineWrap
-Interface: IMachine {85cd948e-a71f-4289-281e-0ca7ad48cd89}
+Example `configs/ubuntu.clang19.json`:
+```json
+{
+    "inherits": "base.json",
+    "compiler": {
+        "family": "clang",
+        "version": "release/19.x"
+    }
+}
 ```
 
-If you hit the following error when creating the docker machine then follow the advice here to create the /etc/vbox/network.confs file: https://stackoverflow.com/a/69745931/4764531
-```
-There was an error while executing `VBoxManage`, a CLI used by Vagrant
-for controlling VirtualBox. The command and stderr is shown below.
+Configurations marked as `"abstract": true` will be ignored by CI discovery but can be used as bases for other configs.
 
-Command: ["hostonlyif", "ipconfig", "vboxnet0", "--ip", "192.168.33.1", "--netmask", "255.255.255.0"]
+## Usage
 
-Stderr: VBoxManage: error: Code E_ACCESSDENIED (0x80070005) - Access denied (extended info not available)
-VBoxManage: error: Context: "EnableStaticIPConfig(Bstr(pszIp).raw(), Bstr(pszNetmask).raw())" at line 242 of file VBoxManageHostonly.cpp
+The `bebe.py` script is the main entry point for all operations.
+
+### Listing Configurations
+Discover all buildable (non-abstract) configurations:
+```bash
+python bebe.py list --directory configs
 ```
+
+### Building an Image
+```bash
+python bebe.py build --config configs/ubuntu.clang19.json
+```
+
+To enable advanced caching in CI:
+```bash
+python bebe.py build --config configs/ubuntu.clang19.json \
+  --cache-from type=gha \
+  --cache-to type=gha,mode=max
+```
+
+### Interactive Shell
+Launch a shell inside the built environment:
+```bash
+python bebe.py shell --config configs/ubuntu.clang19.json
+```
+
+## How it Builds on CI
+
+BEBE is designed to be CI-native. We use **Docker Buildx** with the **GitHub Actions Cache Backend** (`type=gha`).
+
+In our [build workflow](.github/workflows/build_environments.yml), we use the following flags to ensure that expensive build steps (like compiling LLVM from source) are cached across different runs:
+
+- `--cache-from type=gha`: Reuses build layers cached in previous GitHub Actions runs.
+- `--cache-to type=gha,mode=max`: Exports all build layers back to the GitHub cache.
+
+This ensures that only the parts of the environment that have changed are rebuilt, saving hours of CI time.
 
