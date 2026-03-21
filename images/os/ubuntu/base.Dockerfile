@@ -20,9 +20,15 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Import compiler macros and run build if required
-{% if params.compiler and compiler %}
+{% if compiler %}
 {{ compiler.build(params) }}
 {% endif %}
+
+# Import and build other tools from source
+{% for tool_name, tool_version in params.versions.items() %}
+{% import 'tools/' ~ tool_name ~ '.Dockerfile' as tool_module %}
+{{ tool_module.build(tool_version) }}
+{% endfor %}
 
 # --- RUNTIME BASE STAGE ---
 # This stage is minimal and provides the runtime components
@@ -45,3 +51,9 @@ FROM {{ state.current_stage }} AS bebe_final
 {% if params.compiler and compiler %}
 {{ compiler.copy(params) }}
 {% endif %}
+
+# Copy and configure other tools
+{% for tool_name, tool_version in params.versions.items() %}
+{% import 'tools/' ~ tool_name ~ '.Dockerfile' as tool_module %}
+{{ tool_module.copy(tool_version) }}
+{% endfor %}
