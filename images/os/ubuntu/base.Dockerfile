@@ -17,6 +17,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install central build dependencies once
 RUN apt-get update && apt-get install -y \
     wget curl git build-essential cmake ninja-build python3 file flex bison lsb-release gnupg \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Import compiler macros and run build if required
