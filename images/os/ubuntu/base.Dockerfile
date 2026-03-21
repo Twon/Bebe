@@ -4,10 +4,6 @@
 {% import 'compiler/' ~ params.compiler.family ~ '.Dockerfile' as compiler %}
 {% endif %}
 
-{% if params.compiler %}
-{% import 'compiler/' ~ params.compiler.family ~ '.Dockerfile' as compiler %}
-{% endif %}
-
 # --- GLOBAL BUILD STAGE ---
 # This stage installs heavy dependencies and provides a base for all builds
 FROM {{ params.os }} AS build_stage

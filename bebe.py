@@ -54,9 +54,10 @@ def run_build(args):
     logging.info(f"Building image '{tag}' using {args.engine}...")
     
     # Run the build, piping the dockerfile contents to stdin
-    if args.engine == 'docker' and (args.cache_from or args.cache_to):
+    if args.engine == 'docker' and (args.cache_from or args.cache_to or args.push):
         # When using Buildx cache backends, we use 'buildx build'
-        cmd = [args.engine, "buildx", "build", "--load", "-t", tag]
+        build_type = "--push" if args.push else "--load"
+        cmd = [args.engine, "buildx", "build", build_type, "-t", tag]
         if args.cache_from:
             cmd.extend(["--cache-from", args.cache_from])
         if args.cache_to:
@@ -142,6 +143,7 @@ def main():
     parser_build.add_argument('--config', required=True, help='Configuration JSON file')
     parser_build.add_argument('--cache-from', help='Build cache source (e.g. type=gha)')
     parser_build.add_argument('--cache-to', help='Build cache destination (e.g. type=gha,mode=max)')
+    parser_build.add_argument('--push', action='store_true', help='Push the image directly after building (requires buildx)')
     parser_build.set_defaults(func=run_build)
 
     # Shell command
