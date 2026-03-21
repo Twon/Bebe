@@ -4,10 +4,6 @@
 {% import 'compiler/' ~ params.compiler.family ~ '.Dockerfile' as compiler %}
 {% endif %}
 
-{% if params.compiler %}
-{% import 'compiler/' ~ params.compiler.family ~ '.Dockerfile' as compiler %}
-{% endif %}
-
 # --- GLOBAL BUILD STAGE ---
 # This stage installs heavy dependencies and provides a base for all builds
 FROM {{ params.os }} AS build_stage
@@ -21,7 +17,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Import compiler macros and run build if required
-{% if compiler %}
+{% if params.compiler and compiler %}
 {{ compiler.build(params) }}
 {% endif %}
 

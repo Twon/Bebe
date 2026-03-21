@@ -24,10 +24,39 @@ def get_image_tag(config_path: str, registry: str = None) -> str:
         tag = f"bebe:{config_name}"
     return tag.lower()
 
+def load_config(config_path: str) -> dict:
+    """Recursively loads configurations based on the 'inherits' key and performs a deep merge."""
+    path = Path(config_path)
+    with open(path) as f:
+        file_config = json.loads(f.read())
+
+    if 'inherits' in file_config:
+        base_path = path.parent / file_config['inherits']
+        config = load_config(str(base_path))
+        
+        # Deep merge: config (base) is updated with file_config (current)
+        def deep_merge(base, update):
+            for key, value in update.items():
+                if key in ['inherits', 'abstract']:
+                    continue
+                if isinstance(value, dict) and key in base and isinstance(base[key], dict):
+                    deep_merge(base[key], value)
+                else:
+                    base[key] = value
+            return base
+        
+        config = deep_merge(config, file_config)
+    else:
+        config = file_config
+    
+    # The 'abstract' property should only apply to the file that defines it
+    config['abstract'] = file_config.get('abstract', False)
+    
+    return config
+
 def generate_dockerfile(config_path: str) -> str:
     """Reads the JSON config and generates the Dockerfile content."""
-    with open(config_path) as configFile:
-        config = json.loads(configFile.read())
+    config = load_config(config_path)
         
     loader = jinja2.FileSystemLoader(Path(__file__).parent / 'images')
     environment = jinja2.Environment(loader=loader)
@@ -42,8 +71,7 @@ def generate_dockerfile(config_path: str) -> str:
 
 def run_build(args):
     """Generates the Dockerfile and executes the build using the chosen engine."""
-    with open(args.config) as f:
-        config = json.loads(f.read())
+    config = load_config(args.config)
         
     tag = get_image_tag(args.config, getattr(args, 'registry', None))
     dockerfile_content = generate_dockerfile(args.config)
@@ -74,8 +102,7 @@ def run_build(args):
 
 def run_shell(args):
     """Launches an interactive shell inside the generated container."""
-    with open(args.config) as f:
-        config = json.loads(f.read())
+    config = load_config(args.config)
         
     tag = get_image_tag(args.config, getattr(args, 'registry', None))
     
@@ -96,8 +123,7 @@ def run_shell(args):
 
 def run_upload(args):
     """Pushes the image to a remote registry."""
-    with open(args.config) as f:
-        config = json.loads(f.read())
+    config = load_config(args.config)
     tag = get_image_tag(args.config, getattr(args, 'registry', None))
     
     logging.info(f"Uploading '{tag}' using {args.engine}...")
@@ -111,8 +137,7 @@ def run_upload(args):
 
 def run_download(args):
     """Pulls the image from a remote registry."""
-    with open(args.config) as f:
-        config = json.loads(f.read())
+    config = load_config(args.config)
     tag = get_image_tag(args.config, getattr(args, 'registry', None))
     
     logging.info(f"Downloading '{tag}' using {args.engine}...")
@@ -123,6 +148,22 @@ def run_download(args):
     except subprocess.CalledProcessError as e:
         logging.error(f"Download failed: {e}")
         sys.exit(1)
+
+def run_list(args):
+    """Lists all buildable (non-abstract) configurations in a directory."""
+    directory = Path(args.directory)
+    buildable = []
+    for p in directory.glob('*.json'):
+        try:
+            config = load_config(str(p))
+            if not config.get('abstract', False):
+                # Use forward slashes for cross-platform CI compatibility
+                buildable.append(str(p).replace('\\', '/'))
+        except Exception:
+            # Skip invalid configs
+            continue
+    # Print the JSON array to stdout for CI consumption
+    print(json.dumps(buildable))
 
 def main():
     # Shared parent parser so flags work before OR after the subcommand
@@ -158,6 +199,11 @@ def main():
     parser_download = subparsers.add_parser('download', parents=[common], help='Pull the image from the registry')
     parser_download.add_argument('--config', required=True, help='Configuration JSON file')
     parser_download.set_defaults(func=run_download)
+
+    # List command (for CI discovery)
+    parser_list = subparsers.add_parser('list', parents=[common], help='List buildable configurations')
+    parser_list.add_argument('--directory', default='configs', help='Directory to scan for configs')
+    parser_list.set_defaults(func=run_list)
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)

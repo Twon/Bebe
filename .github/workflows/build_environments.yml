@@ -27,12 +27,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Find all configurations
+      - name: Find buildable configurations
         id: set-configs
-        # Find all .json files in configs/ and output as a JSON array
         run: |
-          CONFIGS=$(find configs/ -name "*.json" -printf '"%p", ' | sed 's/, $//')
-          echo "configs=[$CONFIGS]" >> "$GITHUB_OUTPUT"
+          CONFIGS=$(python bebe.py list --directory configs)
+          echo "configs=$CONFIGS" >> "$GITHUB_OUTPUT"
 
   build:
     name: Build ${{ matrix.config }}
