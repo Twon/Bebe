@@ -103,7 +103,7 @@ def run_download(args):
     """Pulls the image from a remote registry."""
     with open(args.config) as f:
         config = json.loads(f.read())
-    tag = get_image_tag(args.config, config)
+    tag = get_image_tag(args.config, getattr(args, 'registry', None))
     
     logging.info(f"Downloading '{tag}' using {args.engine}...")
     cmd = [args.engine, "pull", tag]
