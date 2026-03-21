@@ -4,7 +4,7 @@
 {% macro build(params) %}
 # Clone and build GCC from source
 # The version config acts as the branch/tag to checkout
-RUN git clone --depth 1 --branch {{ params.compiler.version }} git://gcc.gnu.org/git/gcc.git /tmp/gcc && \
+RUN git clone --depth 1 --branch {{ params.compiler.version }} https://gcc.gnu.org/git/gcc.git /tmp/gcc && \
     cd /tmp/gcc && \
     ./contrib/download_prerequisites && \
     mkdir build && \

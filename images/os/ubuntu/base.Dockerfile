@@ -1,8 +1,8 @@
-{% macro apt_get(package) -%}
-    apt-get install {{ package }} && apt-get clean
-{%- endmacro %}
-
 {% include 'tools/versions.Dockerfile' %}
+
+{% if params.compiler %}
+{% import 'compiler/' ~ params.compiler.family ~ '.Dockerfile' as compiler %}
+{% endif %}
 
 {% if params.compiler %}
 {% import 'compiler/' ~ params.compiler.family ~ '.Dockerfile' as compiler %}
@@ -16,11 +16,11 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install central build dependencies once
 RUN apt-get update && apt-get install -y \
-    wget curl git build-essential ninja-build python3 file flex bison lsb-release gnupg \
+    wget curl git build-essential cmake ninja-build python3 file flex bison lsb-release gnupg \
     && rm -rf /var/lib/apt/lists/*
 
 # Import compiler macros and run build if required
-{% if compiler %}
+{% if params.compiler and compiler %}
 {{ compiler.build(params) }}
 {% endif %}
 
