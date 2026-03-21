@@ -75,7 +75,11 @@ jobs:
 
       - name: Build Environment Image
         run: |
-          python bebe.py build --config ${{ matrix.config }} --registry ghcr.io/${{ github.repository }} --verbose
+          python bebe.py build --config ${{ matrix.config }} \
+            --registry ghcr.io/${{ github.repository }} \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            --verbose
 
       - name: Push Environment Image
         run: |
