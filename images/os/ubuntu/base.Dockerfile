@@ -32,13 +32,18 @@ RUN apt-get update && apt-get install -y \
 # --- COMPILE MODULES ---
 
 {% if params.compiler %}
-{% include 'compiler/' ~ params.compiler.family ~ '.Dockerfile' %}
+{% import 'compiler/' ~ params.compiler.family ~ '.Dockerfile' as compiler %}
 {% endif %}
 
-# Inject Tool Build Modules
-{% for tool, version in params.versions.items() %}
-{# TODO: include 'tools/' ~ tool ~ '.Dockerfile' #}
-{% endfor %}
+# In the build_stage, we call the compiler's build macro if it exists
+{% if compiler %}
+{{ compiler.build(params) }}
+{% endif %}
 
 # --- FINAL GENERATED IMAGE ---
 FROM {{ state.current_stage }} AS bebe_final
+
+# In the final stage, we call the compiler's copy macro to install the binaries
+{% if compiler %}
+{{ compiler.copy(params) }}
+{% endif %}
