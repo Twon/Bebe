@@ -1,6 +1,6 @@
 {% macro build(version) %}
 {% if not 'windows' in params.os.lower() %}
-RUN wget https://ftp.gnu.org/gnu/gdb/gdb-{{ version }}.tar.gz && \
+RUN wget --retry-connrefused --tries=20 --waitretry=10 https://ftp.gnu.org/gnu/gdb/gdb-{{ version }}.tar.gz && \
     tar -xzf gdb-{{ version }}.tar.gz && \
     cd gdb-{{ version }} && \
     ./configure --prefix=/opt/gdb-{{ version }} && \
