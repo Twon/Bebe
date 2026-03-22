@@ -59,11 +59,12 @@ ENV LD_LIBRARY_PATH=
 
 # In the final stage, we call the compiler's copy macro to install the binaries
 {% if params.compiler and compiler %}
-{{ compiler.copy(params) }}
+{# The compiler copy macro usually uses --from=build_stage, so we override it to tools_stage #}
+{{ compiler.copy(params) | replace('build_stage', 'tools_stage') }}
 {% endif %}
 
 # Copy and configure other tools
 {% for tool_name, tool_version in params.versions.items() %}
 {% import 'tools/' ~ tool_name ~ '.Dockerfile' as tool_module with context %}
-{{ tool_module.copy(tool_version) }}
+{{ tool_module.copy(tool_version) | replace('build_stage', 'tools_stage') }}
 {% endfor %}
