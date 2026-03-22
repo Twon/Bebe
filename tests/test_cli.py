@@ -135,8 +135,20 @@ def test_subcommands_dispatch(monkeypatch):
         config = "configs/base.json"
         engine = "docker"
         registry = None
+        command = None
+        mount = False
     
     # Just verify they run without crashing (logic is shared with build)
     run_shell(Args())
     run_upload(Args())
     run_download(Args())
+
+def test_run_tag(capsys):
+    from bebe.cli import run_tag
+    class Args:
+        config = "configs/ubuntu.gcc14.json"
+        registry = "ghcr.io/test"
+    
+    run_tag(Args())
+    captured = capsys.readouterr()
+    assert "ghcr.io/test/bebe:ubuntu.gcc14" in captured.out

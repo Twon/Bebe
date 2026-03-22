@@ -104,25 +104,46 @@ def run_build(args):
         sys.exit(1)
 
 def run_shell(args):
-    """Launches an interactive shell inside the generated container."""
+    """Launches an interactive shell or runs a command inside the container."""
     config = load_config(args.config)
-        
     tag = get_image_tag(args.config, getattr(args, 'registry', None))
     
-    # Add a BEBE motd/prompt modification when entering the shell
-    bash_cmd = (
-        "echo -e '\\n\\e[1;36mWelcome to the BEBE Terminal!\\e[0m\\n'; "
-        "PS1='\\e[1;36m(bebe)\\e[0m \\w \\$ '; "
-        "bash"
-    )
+    cmd = [args.engine, "run", "--rm"]
     
-    logging.info(f"Starting interactive shell in '{tag}' using {args.engine}...")
-    cmd = [args.engine, "run", "-it", "--rm", tag, "bash", "-c", bash_cmd]
+    # Mount current directory to /src if requested
+    if args.mount:
+        cwd = Path.cwd().absolute()
+        # Ensure path uses forward slashes for cross-platform docker compatibility
+        mount_path = str(cwd).replace('\\', '/')
+        cmd.extend(["-v", f"{mount_path}:/src", "-w", "/src"])
+    
+    if args.command:
+        # Non-interactive command
+        logging.info(f"Executing command in '{tag}' using {args.engine}...")
+        # We append -i to allow stdin piping but omit -t (TTY) in non-interactive tasks
+        cmd.extend(["-i", tag, "bash", "-c", args.command])
+    else:
+        # Interactive shell 
+        logging.info(f"Starting interactive shell in '{tag}' using {args.engine}...")
+        cmd.extend(["-it", tag, "bash", "-c", (
+            "echo -e '\\n\\e[1;36mWelcome to the BEBE Terminal!\\e[0m\\n'; "
+            "PS1='\\e[1;36m(bebe)\\e[0m \\w \\$ '; "
+            "bash"
+        )])
+        
     try:
         subprocess.run(cmd, check=True)
     except subprocess.CalledProcessError as e:
-        logging.error(f"Failed to launch shell: {e}")
+        if args.command:
+            logging.error(f"Command execution failed: {e}")
+        else:
+            logging.error(f"Failed to launch shell: {e}")
         sys.exit(1)
+
+def run_tag(args):
+    """Resolves and prints the full image tag for a configuration."""
+    tag = get_image_tag(args.config, getattr(args, 'registry', None))
+    print(tag)
 
 def run_upload(args):
     """Pushes the image to a remote registry."""
@@ -190,8 +211,10 @@ def main():
     parser_build.set_defaults(func=run_build)
 
     # Shell command
-    parser_shell = subparsers.add_parser('shell', parents=[common], help='Launch an interactive shell in the image')
+    parser_shell = subparsers.add_parser('shell', parents=[common], help='Launch interactive shell or run command in image')
     parser_shell.add_argument('--config', required=True, help='Configuration JSON file')
+    parser_shell.add_argument('--command', help='Specific command to run non-interactively')
+    parser_shell.add_argument('--mount', action='store_true', help='Mount current directory to /src')
     parser_shell.set_defaults(func=run_shell)
 
     # Upload command
@@ -203,6 +226,11 @@ def main():
     parser_download = subparsers.add_parser('download', parents=[common], help='Pull the image from the registry')
     parser_download.add_argument('--config', required=True, help='Configuration JSON file')
     parser_download.set_defaults(func=run_download)
+
+    # Tag command (for resolving image names)
+    parser_tag = subparsers.add_parser('tag', parents=[common], help='Resolve and print the image tag')
+    parser_tag.add_argument('--config', required=True, help='Configuration JSON file')
+    parser_tag.set_defaults(func=run_tag)
 
     # List command (for CI discovery)
     parser_list = subparsers.add_parser('list', parents=[common], help='List buildable configurations')
