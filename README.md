@@ -98,3 +98,13 @@ Because `bebe` invokes `docker buildx build` within a regular shell `run: ` step
 
 To fix this, our workflow uses the [`crazy-max/ghaction-github-runtime`](https://github.com/crazy-max/ghaction-github-runtime) action explicitly right before the build step. This seamlessly exposes the `ACTIONS_CACHE_URL` and `ACTIONS_RUNTIME_TOKEN` environment variables to the shell, ensuring the underlying `buildx` process can successfully communicate with the GitHub Cache API. This caching methodology ensures that only the parts of the environment that have changed are rebuilt, saving hours of CI time.
 
+## Roadmap
+
+We are actively working on expanding the BeBe ecosystem. Key upcoming features include:
+
+- **Official GitHub Action**: A native `twon/bebe-action` to allow other repositories to easily build within a specific BeBe-generated environment.
+- **VS Code / Dev Container Integration**: Seamless integration to allow developers to switch between toolsets while keeping their project source on the host, mapping it into the optimized build container for high-performance development.
+
+---
+© 2026 BeBe Contributors. Released under the MIT License.
+
