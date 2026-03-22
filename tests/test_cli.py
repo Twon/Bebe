@@ -40,11 +40,103 @@ def test_load_config_and_inheritance(tmp_path):
     assert config["abstract"] is False
 
 def test_generate_dockerfile():
-    # We test on the real base config to ensure all Jinja2 macros and imports evaluate cleanly
-    # without scoping or syntax exceptions on native rendering.
-    config_path = Path('configs/base.json')
+    # We test on a real compiler config to ensure the multi-stage logic (compiler_stage, tools_stage)
+    # is correctly rendered in the final output.
+    config_path = Path('configs/ubuntu.gcc14.json')
     if config_path.exists():
         content = generate_dockerfile(str(config_path))
-        assert "FROM ubuntu:24.04" in content
+        assert "FROM ubuntu:24.04 AS build_base" in content
+        assert "AS compiler_stage" in content
+        assert "AS build_stage" in content
+        assert "COPY --from=compiler_stage /opt /opt" in content
+        assert "COPY --from=build_stage" in content
+        assert "gcc" in content
         assert "ninja" in content
-        assert "apt-get update" in content
+
+def test_run_list(tmp_path, capsys):
+    # Setup mock configs
+    (tmp_path / "base.json").write_text(json.dumps({"abstract": True}))
+    (tmp_path / "child.json").write_text(json.dumps({"inherits": "base.json", "os": "ubuntu"}))
+    (tmp_path / "invalid.json").write_text("not json")
+    
+    from bebe.cli import run_list
+    class Args:
+        directory = str(tmp_path)
+    
+    run_list(Args())
+    
+    captured = capsys.readouterr()
+    results = json.loads(captured.out)
+    
+    # Should only contain buildable (non-abstract) configs
+    assert any("child.json" in r for r in results)
+    assert not any("base.json" in r for r in results)
+    assert not any("invalid.json" in r for r in results)
+
+def test_main_help(capsys):
+    from bebe.cli import main
+    import sys
+    from unittest.mock import patch
+    
+    with patch.object(sys, 'argv', ['bebe']):
+        try:
+            main()
+        except SystemExit:
+            pass
+    
+    captured = capsys.readouterr()
+    assert "usage:" in captured.err
+    assert "build" in captured.err
+    assert "list" in captured.err
+
+def test_run_build_dry_run(tmp_path, monkeypatch):
+    # Test that run_build constructs the correct subprocess call
+    config_file = tmp_path / "test.json"
+    config_file.write_text(json.dumps({"os": "ubuntu", "versions": {}}))
+    
+    from bebe.cli import run_build
+    class Args:
+        config = str(config_file)
+        engine = "docker"
+        verbose = False
+        cache_from = "type=gha"
+        cache_to = "type=gha,mode=max"
+        push = False
+        registry = "ghcr.io/test"
+
+    import subprocess
+    captured_cmds = []
+    
+    def mock_run(cmd, **kwargs):
+        captured_cmds.append(cmd)
+        class MockResult:
+            returncode = 0
+        return MockResult()
+        
+    monkeypatch.setattr(subprocess, "run", mock_run)
+    
+    run_build(Args())
+    
+    assert len(captured_cmds) == 1
+    assert "buildx" in captured_cmds[0]
+    assert "--cache-from" in captured_cmds[0]
+    assert "ghcr.io/test/bebe:test" in captured_cmds[0]
+
+def test_subcommands_dispatch(monkeypatch):
+    from bebe.cli import run_shell, run_upload, run_download
+    import subprocess
+    
+    def mock_run(cmd, **kwargs):
+        return type('obj', (object,), {'returncode': 0})
+    
+    monkeypatch.setattr(subprocess, "run", mock_run)
+    
+    class Args:
+        config = "configs/base.json"
+        engine = "docker"
+        registry = None
+    
+    # Just verify they run without crashing (logic is shared with build)
+    run_shell(Args())
+    run_upload(Args())
+    run_download(Args())

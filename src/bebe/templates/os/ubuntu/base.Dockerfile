@@ -25,7 +25,8 @@ FROM build_base AS compiler_stage
 
 # --- TOOLS BUILD STAGE ---
 # Builds additional tools from source. Inherits base instead of compiler to avoid cache-busts.
-FROM build_base AS tools_stage
+# We name this 'build_stage' to maintain compatibility with all tool macros.
+FROM build_base AS build_stage
 {% if params.compiler and compiler %}
 # Copy compiler binaries so subsequent tools can use them if needed for building
 COPY --from=compiler_stage /opt /opt
