@@ -18,7 +18,33 @@ on:
   workflow_dispatch:
 
 jobs:
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install .[test]
+
+      - name: Run Pytest
+        run: pytest --cov=bebe --cov-report=xml
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+
   discover-configs:
+    name: Discover Configurations
+    needs: test
     name: Discover Configurations
     runs-on: ubuntu-latest
     outputs:
