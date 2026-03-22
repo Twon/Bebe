@@ -26,7 +26,7 @@ runs:
 
     - name: Install BeBe
       shell: bash
-      run: pip install "git+https://github.com/Twon/Bebe.git"
+      run: pip install "$GITHUB_ACTION_PATH"
 
     - name: Resolve Environment
       id: resolve
