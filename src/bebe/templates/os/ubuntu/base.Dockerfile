@@ -4,9 +4,9 @@
 {% import 'compiler/' ~ params.compiler.family ~ '.Dockerfile' as compiler %}
 {% endif %}
 
-# --- GLOBAL BUILD STAGE ---
-# This stage installs heavy dependencies and provides a base for all builds
-FROM {{ params.os }} AS build_stage
+# --- BUILD BASE STAGE ---
+# This stage installs heavy dependencies and provides a foundation for all builds
+FROM {{ params.os }} AS build_base
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -16,9 +16,19 @@ RUN apt-get update && apt-get install -y \
     libssl-dev zlib1g-dev libffi-dev libsqlite3-dev libbz2-dev libreadline-dev texinfo libgmp-dev libzstd-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Import compiler macros and run build if required
+# --- COMPILER BUILD STAGE ---
+# Only builds the compiler from source. This is the heaviest and most cached layer.
+FROM build_base AS compiler_stage
 {% if params.compiler and compiler %}
 {{ compiler.build(params) }}
+{% endif %}
+
+# --- TOOLS BUILD STAGE ---
+# Builds additional tools from source. Inherits base instead of compiler to avoid cache-busts.
+FROM build_base AS tools_stage
+{% if params.compiler and compiler %}
+# Copy compiler binaries so subsequent tools can use them if needed for building
+COPY --from=compiler_stage /opt /opt
 {% endif %}
 
 # Import and build other tools from source
