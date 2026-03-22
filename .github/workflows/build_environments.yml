@@ -5,21 +5,48 @@ on:
     branches: [ "main" ]
     paths:
       - 'configs/**'
-      - 'images/**'
-      - 'bebe.py'
-      - '.github/workflows/build_environments.yml'
+      - 'src/**'
+      - 'pyproject.toml'
+      - 'tests/**'
+      - '.github/workflows/**'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'configs/**'
-      - 'images/**'
-      - 'bebe.py'
-      - '.github/workflows/build_environments.yml'
+      - 'src/**'
+      - 'pyproject.toml'
+      - 'tests/**'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 jobs:
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install ".[test]"
+
+      - name: Run Pytest
+        run: pytest --cov=bebe --cov-report=xml
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+
   discover-configs:
     name: Discover Configurations
+    needs: test
     runs-on: ubuntu-latest
     outputs:
       configs: ${{ steps.set-configs.outputs.configs }}
@@ -27,10 +54,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install BeBe
+        run: pip install .
+
       - name: Find buildable configurations
         id: set-configs
         run: |
-          CONFIGS=$(python bebe.py list --directory configs)
+          CONFIGS=$(bebe list --directory configs)
           echo "configs=$CONFIGS" >> "$GITHUB_OUTPUT"
 
   build:
@@ -59,8 +94,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          # Ensure Jinja2 is installed for the bebe script
-          pip install Jinja2
+          pip install .
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -77,7 +111,7 @@ jobs:
 
       - name: Build and Push Environment Image
         run: |
-          python bebe.py build --config ${{ matrix.config }} \
+          bebe build --config ${{ matrix.config }} \
             --registry ghcr.io/${{ github.repository }} \
             --push \
             --cache-from "type=gha,scope=${{ matrix.config }}" \

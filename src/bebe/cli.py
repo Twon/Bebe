@@ -7,6 +7,7 @@ import argparse
 import json
 import logging
 import subprocess
+import importlib.resources as pkg_resources
 import sys
 from pathlib import Path
 
@@ -58,7 +59,8 @@ def generate_dockerfile(config_path: str) -> str:
     """Reads the JSON config and generates the Dockerfile content."""
     config = load_config(config_path)
         
-    loader = jinja2.FileSystemLoader(Path(__file__).parent / 'images')
+    templates_dir = pkg_resources.files('bebe').joinpath('templates')
+    loader = jinja2.FileSystemLoader(str(templates_dir))
     environment = jinja2.Environment(loader=loader)
     
     # We assume 'os' in config can be like 'ubuntu:24.04', so we extract 'ubuntu'
