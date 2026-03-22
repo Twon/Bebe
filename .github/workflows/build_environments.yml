@@ -110,7 +110,9 @@ jobs:
         run: |
           # Sanitise config path into a valid Docker tag (configs/ubuntu.clang19.json -> ubuntu.clang19)
           CACHE_TAG=$(echo "${{ matrix.config }}" | sed 's|configs/||' | sed 's|\.json$||')
-          CACHE_REF="ghcr.io/${{ github.repository }}/cache:${CACHE_TAG}"
+          # Docker registry references must be lowercase
+          REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          CACHE_REF="ghcr.io/${REPO}/cache:${CACHE_TAG}"
           bebe build --config ${{ matrix.config }} \
             --registry ghcr.io/${{ github.repository }} \
             --push \
