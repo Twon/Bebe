@@ -45,7 +45,6 @@ jobs:
   discover-configs:
     name: Discover Configurations
     needs: test
-    name: Discover Configurations
     runs-on: ubuntu-latest
     outputs:
       configs: ${{ steps.set-configs.outputs.configs }}
