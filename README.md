@@ -1,5 +1,10 @@
 # BeBe: Bleeding Edge Build Environment
 
+[![Build Environments](https://github.com/Twon/Bebe/actions/workflows/build_environments.yml/badge.svg)](https://github.com/Twon/Bebe/actions/workflows/build_environments.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
+
 BEBE is a flexible tool for generating and managing high-performance C++ build environments. It uses Jinja2 templates to dynamically generate Dockerfiles based on JSON configurations, allowing for easy management of different compiler versions and toolchains.
 
 ## Features
