@@ -106,14 +106,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Expose GitHub Runtime
-        uses: crazy-max/ghaction-github-runtime@v3
-
       - name: Build and Push Environment Image
         run: |
+          # Sanitise config path into a valid Docker tag (configs/ubuntu.clang19.json -> ubuntu.clang19)
+          CACHE_TAG=$(echo "${{ matrix.config }}" | sed 's|configs/||' | sed 's|\.json$||')
+          CACHE_REF="ghcr.io/${{ github.repository }}/cache:${CACHE_TAG}"
           bebe build --config ${{ matrix.config }} \
             --registry ghcr.io/${{ github.repository }} \
             --push \
-            --cache-from "type=gha,scope=${{ matrix.config }}" \
-            --cache-to "type=gha,mode=max,scope=${{ matrix.config }},compression=zstd,force-compression=true" \
+            --cache-from "type=registry,ref=${CACHE_REF}" \
+            --cache-to "type=registry,ref=${CACHE_REF},mode=max" \
             --verbose
