@@ -25,9 +25,21 @@ def get_image_tag(config_path: str, registry: str = None) -> str:
         tag = f"bebe:{config_name}"
     return tag.lower()
 
+def resolve_config_path(config_path: str) -> Path:
+    """Resolves a config file path, searching the 'configs/' directory as a fallback."""
+    path = Path(config_path)
+    if path.exists():
+        return path
+    # Try searching in a 'configs/' subdirectory (useful when only the filename is given)
+    fallback = Path('configs') / path.name
+    if fallback.exists():
+        return fallback
+    # Return original path so error messages are informative
+    return path
+
 def load_config(config_path: str) -> dict:
     """Recursively loads configurations based on the 'inherits' key and performs a deep merge."""
-    path = Path(config_path)
+    path = resolve_config_path(config_path)
     with open(path) as f:
         file_config = json.loads(f.read())
 
