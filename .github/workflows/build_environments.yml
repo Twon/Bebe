@@ -78,5 +78,5 @@ jobs:
             --registry ghcr.io/${{ github.repository }} \
             --push \
             --cache-from "type=gha,scope=${{ matrix.config }}" \
-            --cache-to "type=gha,mode=max,scope=${{ matrix.config }}" \
+            --cache-to "type=gha,mode=max,scope=${{ matrix.config }},compression=zstd,force-compression=true" \
             --verbose
