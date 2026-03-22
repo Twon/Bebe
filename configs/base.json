@@ -2,9 +2,9 @@
     "abstract": true,
     "os": "ubuntu:24.04",
     "versions": {
-        "cmake": "3.30.0",
-        "doxygen": "1.10.0",
-        "openssl": "3.3.0",
-        "lcov": "2.1"
+        "cmake": "4.3.0",
+        "doxygen": "1.16.1",
+        "openssl": "3.6.1",
+        "lcov": "2.4"
     }
 }

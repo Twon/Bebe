@@ -1,0 +1,7 @@
+{
+    "inherits": "base.json",
+    "compiler": {
+        "family": "clang",
+        "version": "release/22.x"
+    }
+}

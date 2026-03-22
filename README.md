@@ -1,5 +1,10 @@
 # BeBe: Bleeding Edge Build Environment
 
+[![Build Environments](https://github.com/Twon/Bebe/actions/workflows/build_environments.yml/badge.svg)](https://github.com/Twon/Bebe/actions/workflows/build_environments.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
+
 BEBE is a flexible tool for generating and managing high-performance C++ build environments. It uses Jinja2 templates to dynamically generate Dockerfiles based on JSON configurations, allowing for easy management of different compiler versions and toolchains.
 
 ## Features
@@ -87,5 +92,8 @@ In our [build workflow](.github/workflows/build_environments.yml), we use the fo
 - `--cache-from type=gha`: Reuses build layers cached in previous GitHub Actions runs.
 - `--cache-to type=gha,mode=max`: Exports all build layers back to the GitHub cache.
 
-This ensures that only the parts of the environment that have changed are rebuilt, saving hours of CI time.
+**Important CI Caching Detail:**
+Because `bebe.py` invokes `docker buildx build` within a regular shell `run: ` step (rather than using the official `docker/build-push-action`), the GitHub Actions runner does not automatically expose the environment variables required by the `type=gha` cache backend out of the box. 
+
+To fix this, our workflow uses the [`crazy-max/ghaction-github-runtime`](https://github.com/crazy-max/ghaction-github-runtime) action explicitly right before the build step. This seamlessly exposes the `ACTIONS_CACHE_URL` and `ACTIONS_RUNTIME_TOKEN` environment variables to the shell, ensuring the underlying `buildx` process can successfully communicate with the GitHub Cache API. This caching methodology ensures that only the parts of the environment that have changed are rebuilt, saving hours of CI time.
 
