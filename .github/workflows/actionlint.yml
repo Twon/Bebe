@@ -21,6 +21,5 @@ jobs:
       - name: Run actionlint
         uses: reviewdog/action-actionlint@v1
         with:
-          fail_on_error: true
           filter_mode: nofilter
           fail_level: error
