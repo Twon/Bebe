@@ -189,10 +189,6 @@ def run_list(args):
     # Print the JSON array to stdout for CI consumption
     print(json.dumps(buildable))
 
-def run_tag(args):
-    """Prints the resolved image tag for a given configuration."""
-    tag = get_image_tag(args.config, getattr(args, 'registry', None))
-    print(tag)
 
 def main():
     # Shared parent parser so flags work before OR after the subcommand
@@ -242,10 +238,6 @@ def main():
     parser_list.add_argument('--directory', default='configs', help='Directory to scan for configs')
     parser_list.set_defaults(func=run_list)
 
-    # Tag command (for Action output)
-    parser_tag = subparsers.add_parser('tag', parents=[common], help='Resolve image tag for a config')
-    parser_tag.add_argument('--config', required=True, help='Configuration JSON file')
-    parser_tag.set_defaults(func=run_tag)
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
