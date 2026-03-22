@@ -8,7 +8,7 @@ on:
       - 'src/**'
       - 'pyproject.toml'
       - 'tests/**'
-      - '.github/workflows/build_environments.yml'
+      - '.github/workflows/**'
   pull_request:
     branches: [ "main" ]
     paths:
@@ -16,7 +16,7 @@ on:
       - 'src/**'
       - 'pyproject.toml'
       - 'tests/**'
-      - '.github/workflows/build_environments.yml'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 jobs:
