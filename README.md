@@ -31,11 +31,11 @@ BEBE is a flexible tool for generating and managing high-performance C++ build e
    cd bebe
    ```
 
-2. Set up the virtual environment:
+2. Set up the virtual environment and install BeBe:
    ```bash
    python3 -m venv .venv
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   pip install -r requirements.txt
+   pip install .
    ```
 
 ## Configuration Inheritance
@@ -57,22 +57,22 @@ Configurations marked as `"abstract": true` will be ignored by CI discovery but 
 
 ## Usage
 
-The `bebe.py` script is the main entry point for all operations.
+The `bebe` command is the main entry point for all operations.
 
 ### Listing Configurations
 Discover all buildable (non-abstract) configurations:
 ```bash
-python bebe.py list --directory configs
+bebe list --directory configs
 ```
 
 ### Building an Image
 ```bash
-python bebe.py build --config configs/ubuntu.clang19.json
+bebe build --config configs/ubuntu.clang19.json
 ```
 
 To enable advanced caching in CI:
 ```bash
-python bebe.py build --config configs/ubuntu.clang19.json \
+bebe build --config configs/ubuntu.clang19.json \
   --cache-from type=gha \
   --cache-to type=gha,mode=max
 ```
@@ -80,7 +80,7 @@ python bebe.py build --config configs/ubuntu.clang19.json \
 ### Interactive Shell
 Launch a shell inside the built environment:
 ```bash
-python bebe.py shell --config configs/ubuntu.clang19.json
+bebe shell --config configs/ubuntu.clang19.json
 ```
 
 ## How it Builds on CI
@@ -93,7 +93,7 @@ In our [build workflow](.github/workflows/build_environments.yml), we use the fo
 - `--cache-to type=gha,mode=max`: Exports all build layers back to the GitHub cache.
 
 **Important CI Caching Detail:**
-Because `bebe.py` invokes `docker buildx build` within a regular shell `run: ` step (rather than using the official `docker/build-push-action`), the GitHub Actions runner does not automatically expose the environment variables required by the `type=gha` cache backend out of the box. 
+Because `bebe` invokes `docker buildx build` within a regular shell `run: ` step (rather than using the official `docker/build-push-action`), the GitHub Actions runner does not automatically expose the environment variables required by the `type=gha` cache backend out of the box. 
 
 To fix this, our workflow uses the [`crazy-max/ghaction-github-runtime`](https://github.com/crazy-max/ghaction-github-runtime) action explicitly right before the build step. This seamlessly exposes the `ACTIONS_CACHE_URL` and `ACTIONS_RUNTIME_TOKEN` environment variables to the shell, ensuring the underlying `buildx` process can successfully communicate with the GitHub Cache API. This caching methodology ensures that only the parts of the environment that have changed are rebuilt, saving hours of CI time.
 
