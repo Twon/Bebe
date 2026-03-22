@@ -13,7 +13,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install central build dependencies once
 RUN apt-get update && apt-get install -y \
     wget curl git build-essential cmake ninja-build python3 file flex bison lsb-release gnupg \
-    libssl-dev \
+    libssl-dev zlib1g-dev libffi-dev libsqlite3-dev libbz2-dev libreadline-dev texinfo libgmp-dev libzstd-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Import compiler macros and run build if required
@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y \
 
 # Import and build other tools from source
 {% for tool_name, tool_version in params.versions.items() %}
-{% import 'tools/' ~ tool_name ~ '.Dockerfile' as tool_module %}
+{% import 'tools/' ~ tool_name ~ '.Dockerfile' as tool_module with context %}
 {{ tool_module.build(tool_version) }}
 {% endfor %}
 
@@ -44,6 +44,9 @@ RUN apt-get update && apt-get install -y \
 # --- FINAL GENERATED IMAGE ---
 FROM {{ state.current_stage }} AS bebe_final
 
+# Initialize LD_LIBRARY_PATH to avoid "UndefinedVar" warnings in tool macros
+ENV LD_LIBRARY_PATH=
+
 # In the final stage, we call the compiler's copy macro to install the binaries
 {% if params.compiler and compiler %}
 {{ compiler.copy(params) }}
@@ -51,6 +54,6 @@ FROM {{ state.current_stage }} AS bebe_final
 
 # Copy and configure other tools
 {% for tool_name, tool_version in params.versions.items() %}
-{% import 'tools/' ~ tool_name ~ '.Dockerfile' as tool_module %}
+{% import 'tools/' ~ tool_name ~ '.Dockerfile' as tool_module with context %}
 {{ tool_module.copy(tool_version) }}
 {% endfor %}
