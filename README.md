@@ -87,5 +87,8 @@ In our [build workflow](.github/workflows/build_environments.yml), we use the fo
 - `--cache-from type=gha`: Reuses build layers cached in previous GitHub Actions runs.
 - `--cache-to type=gha,mode=max`: Exports all build layers back to the GitHub cache.
 
-This ensures that only the parts of the environment that have changed are rebuilt, saving hours of CI time.
+**Important CI Caching Detail:**
+Because `bebe.py` invokes `docker buildx build` within a regular shell `run: ` step (rather than using the official `docker/build-push-action`), the GitHub Actions runner does not automatically expose the environment variables required by the `type=gha` cache backend out of the box. 
+
+To fix this, our workflow uses the [`crazy-max/ghaction-github-runtime`](https://github.com/crazy-max/ghaction-github-runtime) action explicitly right before the build step. This seamlessly exposes the `ACTIONS_CACHE_URL` and `ACTIONS_RUNTIME_TOKEN` environment variables to the shell, ensuring the underlying `buildx` process can successfully communicate with the GitHub Cache API. This caching methodology ensures that only the parts of the environment that have changed are rebuilt, saving hours of CI time.
 
