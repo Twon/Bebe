@@ -25,7 +25,8 @@ FROM build_base AS compiler_stage
 
 # --- TOOLS BUILD STAGE ---
 # Builds additional tools from source. Inherits base instead of compiler to avoid cache-busts.
-FROM build_base AS tools_stage
+# We name this 'build_stage' to maintain compatibility with all tool macros.
+FROM build_base AS build_stage
 {% if params.compiler and compiler %}
 # Copy compiler binaries so subsequent tools can use them if needed for building
 COPY --from=compiler_stage /opt /opt
@@ -59,12 +60,11 @@ ENV LD_LIBRARY_PATH=
 
 # In the final stage, we call the compiler's copy macro to install the binaries
 {% if params.compiler and compiler %}
-{# The compiler copy macro usually uses --from=build_stage, so we override it to tools_stage #}
-{{ compiler.copy(params) | replace('build_stage', 'tools_stage') }}
+{{ compiler.copy(params) }}
 {% endif %}
 
 # Copy and configure other tools
 {% for tool_name, tool_version in params.versions.items() %}
 {% import 'tools/' ~ tool_name ~ '.Dockerfile' as tool_module with context %}
-{{ tool_module.copy(tool_version) | replace('build_stage', 'tools_stage') }}
+{{ tool_module.copy(tool_version) }}
 {% endfor %}
