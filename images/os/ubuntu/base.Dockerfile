@@ -44,6 +44,9 @@ RUN apt-get update && apt-get install -y \
 # --- FINAL GENERATED IMAGE ---
 FROM {{ state.current_stage }} AS bebe_final
 
+# Initialize LD_LIBRARY_PATH to avoid "UndefinedVar" warnings in tool macros
+ENV LD_LIBRARY_PATH=
+
 # In the final stage, we call the compiler's copy macro to install the binaries
 {% if params.compiler and compiler %}
 {{ compiler.copy(params) }}
