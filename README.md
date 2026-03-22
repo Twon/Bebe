@@ -1,6 +1,7 @@
 # BeBe: Bleeding Edge Build Environment
 
 [![Build Environments](https://github.com/Twon/Bebe/actions/workflows/build_environments.yml/badge.svg)](https://github.com/Twon/Bebe/actions/workflows/build_environments.yml)
+[![codecov](https://codecov.io/gh/Twon/Bebe/branch/main/graph/badge.svg)](https://codecov.io/gh/Twon/Bebe)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
