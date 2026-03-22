@@ -23,4 +23,4 @@ jobs:
         with:
           fail_on_error: true
           filter_mode: nofilter
-          level: error
+          fail_level: error
