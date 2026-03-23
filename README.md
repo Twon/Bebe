@@ -14,7 +14,7 @@ BEBE is a flexible tool for generating and managing high-performance C++ build e
 - **Multiprocess Builds**: Supports building Clang, GCC, and more from source.
 - **Configuration Inheritance**: Share common settings across multiple environments using base configurations.
 - **CI/CD Optimization**: Integrated with Docker Buildx and GitHub Actions (`gha`) caching for lightning-fast incremental builds.
-- **CLI Tool**: A unified `bebe.py` script for all build and management tasks.
+- **CLI Tool**: A unified `bebe` command for all build and management tasks.
 
 ## Getting Started
 
@@ -84,6 +84,50 @@ Launch a shell inside the built environment:
 bebe shell --config configs/ubuntu.clang19.json
 ```
 
+## Using in GitHub Actions
+
+BeBe provides a native GitHub Action to simplify and automate your CI pipelines.
+
+### Recommended Pattern: Job Containers
+
+This pattern uses two jobs: one to resolve the correct image tag for your configuration, and another to run your build inside that image. This is the recommended way to use BeBe for a seamless CI environment experience.
+
+```yaml
+jobs:
+  env:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.resolve.outputs.image }}
+    steps:
+      - uses: Twon/Bebe@main
+        id: resolve
+        with:
+          config: ubuntu.gcc14.json  # Choose your environment
+
+  build:
+    needs: env
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.env.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: gcc --version
+      - run: cmake --version
+```
+
+### Simple Pattern: One-Shot Commands
+
+If you only need to run a quick script, you can use the `run` input to execute it directly inside the container without switching the whole job's environment:
+
+```yaml
+- uses: Twon/Bebe@main
+  with:
+    config: ubuntu.gcc14.json
+    run: |
+      gcc --version
+      cmake --version
+```
+
 ## How it Builds on CI
 
 BEBE is designed to be CI-native. We use **Docker Buildx** with the **GitHub Actions Cache Backend** (`type=gha`).
@@ -98,3 +142,11 @@ Because `bebe` invokes `docker buildx build` within a regular shell `run: ` step
 
 To fix this, our workflow uses the [`crazy-max/ghaction-github-runtime`](https://github.com/crazy-max/ghaction-github-runtime) action explicitly right before the build step. This seamlessly exposes the `ACTIONS_CACHE_URL` and `ACTIONS_RUNTIME_TOKEN` environment variables to the shell, ensuring the underlying `buildx` process can successfully communicate with the GitHub Cache API. This caching methodology ensures that only the parts of the environment that have changed are rebuilt, saving hours of CI time.
 
+## Roadmap
+
+We are actively working on expanding the BeBe ecosystem. Key upcoming features include:
+
+- **VS Code / Dev Container Integration**: Seamless integration to allow developers to switch between toolsets while keeping their project source on the host, mapping it into the optimized build container for high-performance development.
+
+---
+© 2026 BeBe Contributors. Released under the MIT License.

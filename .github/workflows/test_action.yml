@@ -1,0 +1,35 @@
+name: Test Action
+on:
+  push:
+    branches: [ "main", "dev-*" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test BeBe Action
+        id: bebe
+        uses: ./
+        with:
+          config: ubuntu.gcc14.json
+
+      - name: Verify Output
+        run: |
+          echo "Resolved image: ${{ steps.bebe.outputs.image }}"
+          if [[ "${{ steps.bebe.outputs.image }}" != "ghcr.io/twon/bebe/bebe:ubuntu.gcc14" ]]; then
+            echo "Error: Unexpected image tag"
+            exit 1
+          fi
+
+      - name: Test BeBe Action with 'run'
+        uses: ./
+        with:
+          config: ubuntu.gcc14.json
+          run: |
+            gcc --version
+            cmake --version
+            ninja --version

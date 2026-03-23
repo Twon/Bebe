@@ -1,0 +1,44 @@
+name: 'BeBe Build Environment'
+description: 'Identify and resolve BeBe-generated build environments'
+inputs:
+  config:
+    description: 'The name of the configuration file (e.g. ubuntu.gcc14.json)'
+    required: true
+  registry:
+    description: 'The container registry prefix'
+    required: false
+    default: 'ghcr.io/twon/bebe'
+  run:
+    description: 'A script/command to run inside the BeBe environment'
+    required: false
+outputs:
+  image:
+    description: 'The resolved full image tag'
+    value: ${{ steps.resolve.outputs.image }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install BeBe
+      shell: bash
+      run: pip install "$GITHUB_ACTION_PATH"
+
+    - name: Resolve Environment
+      id: resolve
+      shell: bash
+      run: |
+        TAG=$(bebe tag --config ${{ inputs.config }} --registry ${{ inputs.registry }})
+        echo "image=$TAG" >> $GITHUB_OUTPUT
+
+    - name: Run Command in BeBe
+      if: ${{ inputs.run != '' }}
+      shell: bash
+      env:
+        BEBE_RUN: ${{ inputs.run }}
+      run: |
+        bebe shell --config ${{ inputs.config }} --registry ${{ inputs.registry }} --mount --command "$BEBE_RUN"
