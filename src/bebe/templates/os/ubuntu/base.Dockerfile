@@ -47,7 +47,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install only minimal runtime dependencies
 RUN apt-get update && apt-get install -y \
-    wget curl git ca-certificates \
+    wget curl git ca-certificates gnupg \
     && rm -rf /var/lib/apt/lists/*
 
 # Initialize current_stage state for chained builds
