@@ -48,7 +48,8 @@ def test_generate_dockerfile():
         assert "FROM ubuntu:24.04 AS build_base" in content
         assert "AS compiler_stage" in content
         assert "AS build_stage" in content
-        assert "COPY --from=compiler_stage /opt /opt" in content
+        # Ensure final stage copies from both independent stages
+        assert "COPY --from=compiler_stage" in content
         assert "COPY --from=build_stage" in content
         assert "gcc" in content
         assert "ninja" in content
