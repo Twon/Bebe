@@ -18,7 +18,7 @@ RUN git clone --depth 1 --branch {{ params.compiler.version }} https://github.co
 
 {% macro copy(params) %}
 # Copy the compiled Clang compiler from the build stage
-COPY --from=build_stage /opt/clang-{{ params.compiler.version }} /opt/clang-{{ params.compiler.version }}
+COPY --from=compiler_stage /opt/clang-{{ params.compiler.version }} /opt/clang-{{ params.compiler.version }}
 
 ENV CC=/opt/clang-{{ params.compiler.version }}/bin/clang
 ENV CXX=/opt/clang-{{ params.compiler.version }}/bin/clang++
