@@ -68,9 +68,42 @@ jobs:
           CONFIGS=$(bebe list --directory configs)
           echo "configs=$CONFIGS" >> "$GITHUB_OUTPUT"
 
+  lint:
+    name: Lint ${{ matrix.config }}
+    needs: discover-configs
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: ${{ fromJson(needs.discover-configs.outputs.configs) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install BeBe
+        run: pip install .
+
+      - name: Generate Dockerfile
+        run: |
+          # Create a directory to store the generated Dockerfile
+          # Hadolint action expects a file path
+          bebe generate --config ${{ matrix.config }} > Dockerfile.lint
+
+      - name: Run Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile.lint
+          # We fail on errors, but warnings can be reviewed in the action output
+          failure-threshold: error
+
   build:
     name: Build ${{ matrix.config }}
-    needs: discover-configs
+    needs: [discover-configs, lint]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
