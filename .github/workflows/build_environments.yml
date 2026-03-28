@@ -103,14 +103,21 @@ jobs:
           no-fail: true
 
       - name: Update Summary
+        env:
+          HADOLINT_RESULTS: ${{ steps.hadolint.outputs.results }}
+          CONFIG_NAME: ${{ matrix.config }}
         run: |
-          echo "### Hadolint Lint Results for ${{ matrix.config }}" >> $GITHUB_STEP_SUMMARY
-          echo "Status: ${{ steps.hadolint.outputs.results != '' && '⚠️ Warnings/Errors found' || '✅ No issues' }}" >> $GITHUB_STEP_SUMMARY
-          if [ -n "${{ steps.hadolint.outputs.results }}" ]; then
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            echo "${{ steps.hadolint.outputs.results }}" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-          fi
+          {
+            echo "### Hadolint Lint Results for $CONFIG_NAME"
+            if [ -n "$HADOLINT_RESULTS" ]; then
+              echo "Status: ⚠️ Warnings/Errors found"
+              echo '```'
+              echo "$HADOLINT_RESULTS"
+              echo '```'
+            else
+              echo "Status: ✅ No issues"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Fail if warnings found
         if: steps.hadolint.outputs.results != ''
