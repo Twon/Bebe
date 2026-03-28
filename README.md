@@ -66,6 +66,13 @@ Discover all buildable (non-abstract) configurations:
 bebe list --directory configs
 ```
 
+### Generating a Dockerfile
+Render and print the Dockerfile for a specific configuration without building it:
+```bash
+bebe generate --config configs/ubuntu.clang19.json
+```
+This is useful for manual inspection or running external linters like Hadolint.
+
 ### Building an Image
 ```bash
 bebe build --config configs/ubuntu.clang19.json

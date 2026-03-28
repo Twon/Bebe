@@ -95,11 +95,26 @@ jobs:
           bebe generate --config ${{ matrix.config }} > Dockerfile.lint
 
       - name: Run Hadolint
+        id: hadolint
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: Dockerfile.lint
-          # We fail on errors, but warnings can be reviewed in the action output
-          failure-threshold: error
+          failure-threshold: warning
+          no-fail: true
+
+      - name: Update Summary
+        run: |
+          echo "### Hadolint Lint Results for ${{ matrix.config }}" >> $GITHUB_STEP_SUMMARY
+          echo "Status: ${{ steps.hadolint.outputs.results != '' && '⚠️ Warnings/Errors found' || '✅ No issues' }}" >> $GITHUB_STEP_SUMMARY
+          if [ -n "${{ steps.hadolint.outputs.results }}" ]; then
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "${{ steps.hadolint.outputs.results }}" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Fail if warnings found
+        if: steps.hadolint.outputs.results != ''
+        run: exit 1
 
   build:
     name: Build ${{ matrix.config }}

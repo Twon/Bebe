@@ -3,17 +3,17 @@
 
 {% macro build(params) %}
 # Clone and build LLVM/Clang from source
-RUN git clone --depth 1 --branch {{ params.compiler.version }} https://github.com/llvm/llvm-project.git /tmp/llvm-project && \
-    mkdir -p /tmp/llvm-project/build && \
-    cd /tmp/llvm-project/build && \
-    cmake ../llvm \
+RUN git clone --depth 1 --branch {{ params.compiler.version }} https://github.com/llvm/llvm-project.git /tmp/llvm-project
+WORKDIR /tmp/llvm-project/build
+RUN cmake ../llvm \
       -DCMAKE_BUILD_TYPE=Release \
       -DLLVM_ENABLE_PROJECTS="clang;lld" \
       -DLLVM_TARGETS_TO_BUILD="X86" \
       -DCMAKE_INSTALL_PREFIX=/opt/clang-{{ params.compiler.version }} \
       -G "Ninja" && \
-    cmake --build . --target install -j$(nproc) && \
-    rm -rf /tmp/llvm-project
+    cmake --build . --target install -j$(nproc)
+WORKDIR /
+RUN rm -rf /tmp/llvm-project
 {% endmacro %}
 
 {% macro copy(params) %}

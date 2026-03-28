@@ -11,7 +11,7 @@ FROM {{ params.os }} AS build_base
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install central build dependencies once
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     wget curl git build-essential cmake ninja-build python3 python3-dev file flex bison lsb-release gnupg ca-certificates \
     libssl-dev zlib1g-dev libffi-dev libsqlite3-dev libbz2-dev libreadline-dev texinfo libgmp-dev libzstd-dev \
     libexpat1-dev libmpfr-dev libmpc-dev libisl-dev libncurses-dev \
@@ -43,7 +43,7 @@ FROM {{ params.os }} AS runtime_base
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install only minimal runtime dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     wget curl git ca-certificates gnupg \
     && rm -rf /var/lib/apt/lists/*
 

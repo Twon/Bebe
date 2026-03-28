@@ -2,11 +2,11 @@
 
 {% macro build(version) %}
 RUN wget https://github.com/linux-test-project/lcov/releases/download/v{{ version }}/lcov-{{ version }}.tar.gz && \
-    tar -xzf lcov-{{ version }}.tar.gz && \
-    cd lcov-{{ version }} && \
-    make install PREFIX=/opt/lcov-{{ version }} && \
-    cd .. && \
-    rm -rf lcov-{{ version }}*
+    tar -xzf lcov-{{ version }}.tar.gz
+WORKDIR /lcov-{{ version }}
+RUN make install PREFIX=/opt/lcov-{{ version }}
+WORKDIR /
+RUN rm -rf /lcov-{{ version }}*
 {% endmacro %}
 
 {% macro copy(version) %}
