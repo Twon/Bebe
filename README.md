@@ -13,7 +13,7 @@ BEBE is a flexible tool for generating and managing high-performance C++ build e
 - **Dynamic Dockerfile Generation**: Uses Jinja2 templates to build tailored Docker images.
 - **Multiprocess Builds**: Supports building Clang, GCC, and more from source.
 - **Configuration Inheritance**: Share common settings across multiple environments using base configurations.
-- **CI/CD Optimization**: Integrated with Docker Buildx and GitHub Actions (`gha`) caching for lightning-fast incremental builds.
+- **CI/CD Optimization**: Integrated with Docker Buildx and Container Registry caching for lightning-fast incremental builds.
 - **CLI Tool**: A unified `bebe` command for all build and management tasks.
 
 ## Getting Started
@@ -74,8 +74,8 @@ bebe build --config configs/ubuntu.clang19.json
 To enable advanced caching in CI:
 ```bash
 bebe build --config configs/ubuntu.clang19.json \
-  --cache-from type=gha \
-  --cache-to type=gha,mode=max
+  --cache-from type=registry,ref=ghcr.io/twon/bebe/cache:ubuntu.clang19 \
+  --cache-to type=registry,ref=ghcr.io/twon/bebe/cache:ubuntu.clang19,mode=max
 ```
 
 ### Interactive Shell
@@ -130,44 +130,26 @@ If you only need to run a quick script, you can use the `run` input to execute i
 
 ## How it Builds on CI
 
-BEBE is designed to be CI-native. We use **Docker Buildx** with the **GitHub Actions Cache Backend** (`type=gha`).
+BEBE is designed to be CI-native. We use **Docker Buildx** with the **Container Registry Cache Backend** (`type=registry`).
 
 In our [build workflow](.github/workflows/build_environments.yml), we use the following flags to ensure that expensive build steps (like compiling LLVM from source) are cached across different runs:
 
-- `--cache-from type=gha`: Reuses build layers cached in previous GitHub Actions runs.
-- `--cache-to type=gha,mode=max`: Exports all build layers back to the GitHub cache.
+- `--cache-from "type=registry,ref=..."`: Reuses build layers cached in previous CI runs from the registry.
+- `--cache-to "type=registry,ref=...,mode=max"`: Exports all build layers back to the registry.
 
-**Important CI Caching Detail:**
-Because `bebe` invokes `docker buildx build` within a regular shell `run: ` step (rather than using the official `docker/build-push-action`), the GitHub Actions runner does not automatically expose the environment variables required by the `type=gha` cache backend out of the box. 
-
-To fix this, our workflow uses the [`crazy-max/ghaction-github-runtime`](https://github.com/crazy-max/ghaction-github-runtime) action explicitly right before the build step. This seamlessly exposes the `ACTIONS_CACHE_URL` and `ACTIONS_RUNTIME_TOKEN` environment variables to the shell, ensuring the underlying `buildx` process can successfully communicate with the GitHub Cache API. This caching methodology ensures that only the parts of the environment that have changed are rebuilt, saving hours of CI time.
+This caching methodology ensures that only the parts of the environment that have changed are rebuilt, saving hours of CI time.
 
 ### Split-Stage Build Architecture
 
 ![BEBE Architecture](docs/bebe_architecture_diagram.png)
 
-```mermaid
-graph TD
-    A[build_base] -->|Build Tools| B[build_stage]
-    A -->|Build Compiler| C[compiler_stage]
-    B -->|Copy Binaries| E[bebe_final]
-    C -->|Copy Binaries| E
-    D[runtime_base] -->|Minimal Foundation| E
-    
-    style A fill:#1a237e,stroke:#3f51b5,color:#fff
-    style B fill:#004d40,stroke:#009688,color:#fff
-    style C fill:#4a148c,stroke:#9c27b0,color:#fff
-    style D fill:#3e2723,stroke:#795548,color:#fff
-    style E fill:#1b5e20,stroke:#4caf50,color:#fff
-```
-
 BEBE uses a sophisticated multi-stage build process designed for maximum cache efficiency and minimal final image size:
 
 1.  **`build_base`**: A heavy stage containing all tools needed to compile other software (e.g., `build-essential`, `cmake`, `ninja-build`, `git`, `wget`). **This stage is only used for building and is discarded in the final image.**
-2.  **`build_stage` (Tools)**: Independent of the compiler, this stage builds all additional tools (CMake, Ninja, LCOV, etc.) from source. Because it's independent, these builds are **cached and shared** across all compiler images that use the same tool versions.
+2.  **`tools_build_stage`**: Independent of the compiler, this stage builds all additional tools (CMake, Ninja, LCOV, etc.) from source. Because it's independent, these builds are **cached and shared** across all compiler images that use the same tool versions.
 3.  **`compiler_stage`**: Dedicated stage for building the specific compiler (GCC, Clang) requested in the configuration from source.
 4.  **`runtime_base`**: A minimal version of the OS containing only the bare essentials needed at runtime.
-5.  **`bebe_final`**: The final production image that inherits from `runtime_base` and copies only the completed binaries from `compiler_stage` and `build_stage`.
+5.  **`bebe_final`**: The final production image that inherits from `runtime_base` and copies only the completed binaries from `compiler_stage` and `tools_build_stage`.
 
 This "Split-Stage" approach ensures that even if you're building 10 different versions of GCC, you only build your "Bleeding Edge" tools *once*, and your final image remains as lean as possible.
 
