@@ -142,6 +142,35 @@ Because `bebe` invokes `docker buildx build` within a regular shell `run: ` step
 
 To fix this, our workflow uses the [`crazy-max/ghaction-github-runtime`](https://github.com/crazy-max/ghaction-github-runtime) action explicitly right before the build step. This seamlessly exposes the `ACTIONS_CACHE_URL` and `ACTIONS_RUNTIME_TOKEN` environment variables to the shell, ensuring the underlying `buildx` process can successfully communicate with the GitHub Cache API. This caching methodology ensures that only the parts of the environment that have changed are rebuilt, saving hours of CI time.
 
+### Split-Stage Build Architecture
+
+![BEBE Architecture](docs/bebe_architecture_diagram.png)
+
+```mermaid
+graph TD
+    A[build_base] -->|Build Tools| B[build_stage]
+    A -->|Build Compiler| C[compiler_stage]
+    B -->|Copy Binaries| E[bebe_final]
+    C -->|Copy Binaries| E
+    D[runtime_base] -->|Minimal Foundation| E
+    
+    style A fill:#1a237e,stroke:#3f51b5,color:#fff
+    style B fill:#004d40,stroke:#009688,color:#fff
+    style C fill:#4a148c,stroke:#9c27b0,color:#fff
+    style D fill:#3e2723,stroke:#795548,color:#fff
+    style E fill:#1b5e20,stroke:#4caf50,color:#fff
+```
+
+BEBE uses a sophisticated multi-stage build process designed for maximum cache efficiency and minimal final image size:
+
+1.  **`build_base`**: A heavy stage containing all tools needed to compile other software (e.g., `build-essential`, `cmake`, `ninja-build`, `git`, `wget`). **This stage is only used for building and is discarded in the final image.**
+2.  **`build_stage` (Tools)**: Independent of the compiler, this stage builds all additional tools (CMake, Ninja, LCOV, etc.) from source. Because it's independent, these builds are **cached and shared** across all compiler images that use the same tool versions.
+3.  **`compiler_stage`**: Dedicated stage for building the specific compiler (GCC, Clang) requested in the configuration from source.
+4.  **`runtime_base`**: A minimal version of the OS containing only the bare essentials needed at runtime.
+5.  **`bebe_final`**: The final production image that inherits from `runtime_base` and copies only the completed binaries from `compiler_stage` and `build_stage`.
+
+This "Split-Stage" approach ensures that even if you're building 10 different versions of GCC, you only build your "Bleeding Edge" tools *once*, and your final image remains as lean as possible.
+
 ## Roadmap
 
 We are actively working on expanding the BeBe ecosystem. Key upcoming features include:

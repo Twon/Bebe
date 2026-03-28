@@ -17,27 +17,24 @@ RUN apt-get update && apt-get install -y \
     libexpat1-dev libmpfr-dev libmpc-dev libisl-dev libncurses-dev \
     && rm -rf /var/lib/apt/lists/*
 
+
+
+# --- TOOLS BUILD STAGE ---
+# This stage is now independent from compiler_stage to allow caching across all compiler images
+FROM build_base AS build_stage
+
+# Build other tools from source
+{% for tool_name, tool_version in params.versions.items() %}
+{% import 'tools/' ~ tool_name ~ '.Dockerfile' as tool_module with context %}
+{{ tool_module.build(tool_version) }}
+{% endfor %}
+
 # --- COMPILER BUILD STAGE ---
 # Only builds the compiler from source. This is the heaviest and most cached layer.
 FROM build_base AS compiler_stage
 {% if params.compiler and compiler %}
 {{ compiler.build(params) }}
 {% endif %}
-
-# --- TOOLS BUILD STAGE ---
-# Builds additional tools from source. Inherits base instead of compiler to avoid cache-busts.
-# We name this 'build_stage' to maintain compatibility with all tool macros.
-FROM build_base AS build_stage
-{% if params.compiler and compiler %}
-# Copy compiler binaries so subsequent tools can use them if needed for building
-COPY --from=compiler_stage /opt /opt
-{% endif %}
-
-# Import and build other tools from source
-{% for tool_name, tool_version in params.versions.items() %}
-{% import 'tools/' ~ tool_name ~ '.Dockerfile' as tool_module with context %}
-{{ tool_module.build(tool_version) }}
-{% endfor %}
 
 # --- RUNTIME BASE STAGE ---
 # This stage is minimal and provides the runtime components

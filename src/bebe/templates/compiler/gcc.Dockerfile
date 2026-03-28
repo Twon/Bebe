@@ -18,7 +18,7 @@ RUN git clone --depth 1 --branch {{ params.compiler.version }} https://github.co
 
 {% macro copy(params) %}
 # Copy the compiled GCC compiler from the build stage
-COPY --from=build_stage /opt/gcc-{{ params.compiler.version }} /opt/gcc-{{ params.compiler.version }}
+COPY --from=compiler_stage /opt/gcc-{{ params.compiler.version }} /opt/gcc-{{ params.compiler.version }}
 
 ENV CC=/opt/gcc-{{ params.compiler.version }}/bin/gcc
 ENV CXX=/opt/gcc-{{ params.compiler.version }}/bin/g++
