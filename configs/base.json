@@ -1,5 +1,6 @@
 {
     "abstract": true,
+    "registry": "ghcr.io/twon/bebe",
     "os": "ubuntu:24.04",
     "versions": {
         "cmake": "4.3.0",

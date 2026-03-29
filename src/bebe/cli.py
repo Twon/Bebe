@@ -13,10 +13,50 @@ from pathlib import Path
 
 import jinja2
 
+import os
+import jinja2
+
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
+def load_user_config() -> dict:
+    """Loads the user's global configuration from ~/.bebe/config.json if it exists."""
+    user_config_path = Path.home() / '.bebe' / 'config.json'
+    if user_config_path.exists():
+        try:
+            with open(user_config_path) as f:
+                return json.load(f)
+        except Exception as e:
+            logging.warning(f"Failed to load user config at {user_config_path}: {e}")
+    return {}
+
+def resolve_registry(args, config: dict) -> str:
+    """ Resolves the container registry to use based on a hierarchical priority:
+        1. CLI flag (--registry)
+        2. Environment variable (BEBE_REGISTRY)
+        3. User global config (~/.bebe/config.json)
+        4. Project configuration (registry key in JSON)
+    """
+    # 1. CLI flag
+    registry = getattr(args, 'registry', None)
+    if registry:
+        return registry
+
+    # 2. Environment variable
+    registry = os.environ.get('BEBE_REGISTRY')
+    if registry:
+        return registry
+
+    # 3. User global config
+    user_config = load_user_config()
+    registry = user_config.get('registry')
+    if registry:
+        return registry
+
+    # 4. Project configuration
+    return config.get('registry')
+
 def get_image_tag(config_path: str, registry: str = None) -> str:
-    """Generate a tag for the image based on the config file name and optional registry."""
+    """Generates the formatted image tag with an optional registry prefix."""
     config_name = Path(config_path).stem
     if registry:
         prefix = registry if registry.endswith('/') else f"{registry}/"
@@ -127,16 +167,11 @@ def run_shell(args):
         cwd = Path.cwd().absolute()
         # Ensure path uses forward slashes for cross-platform docker compatibility
         mount_path = str(cwd).replace('\\', '/')
-        cmd.extend(["-v", f"{mount_path}:/src", "-w", "/src"])
+        cmd.extend(["-v", f"{Path.cwd()}:/src", "-w", "/src"])
     
     if args.command:
-        # Non-interactive command
-        logging.info(f"Executing command in '{tag}' using {args.engine}...")
-        # We append -i to allow stdin piping but omit -t (TTY) in non-interactive tasks
-        cmd.extend(["-i", tag, "bash", "-c", args.command])
+        cmd.extend([tag, "bash", "-c", args.command])
     else:
-        # Interactive shell 
-        logging.info(f"Starting interactive shell in '{tag}' using {args.engine}...")
         cmd.extend(["-it", tag, "bash", "-c", (
             "echo -e '\\n\\e[1;36mWelcome to the BEBE Terminal!\\e[0m\\n'; "
             "PS1='\\e[1;36m(bebe)\\e[0m \\w \\$ '; "
@@ -154,13 +189,16 @@ def run_shell(args):
 
 def run_tag(args):
     """Resolves and prints the full image tag for a configuration."""
-    tag = get_image_tag(args.config, getattr(args, 'registry', None))
+    config = load_config(args.config)
+    registry = resolve_registry(args, config)
+    tag = get_image_tag(args.config, registry)
     print(tag)
 
 def run_upload(args):
     """Pushes the image to a remote registry."""
     config = load_config(args.config)
-    tag = get_image_tag(args.config, getattr(args, 'registry', None))
+    registry = resolve_registry(args, config)
+    tag = get_image_tag(args.config, registry)
     
     logging.info(f"Uploading '{tag}' using {args.engine}...")
     cmd = [args.engine, "push", tag]
@@ -174,7 +212,8 @@ def run_upload(args):
 def run_download(args):
     """Pulls the image from a remote registry."""
     config = load_config(args.config)
-    tag = get_image_tag(args.config, getattr(args, 'registry', None))
+    registry = resolve_registry(args, config)
+    tag = get_image_tag(args.config, registry)
     
     logging.info(f"Downloading '{tag}' using {args.engine}...")
     cmd = [args.engine, "pull", tag]

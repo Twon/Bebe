@@ -1,7 +1,33 @@
 import json
 from pathlib import Path
 
-from bebe.cli import get_image_tag, load_config, generate_dockerfile
+from unittest.mock import patch
+from bebe.cli import get_image_tag, load_config, generate_dockerfile, resolve_registry
+
+def test_resolve_registry_priority(monkeypatch):
+    class Args:
+        registry = None
+
+    # Test Case 1: Project Config Default
+    config = {"registry": "ghcr.io/project"}
+    assert resolve_registry(Args(), config) == "ghcr.io/project"
+
+    # Test Case 2: User Home Config Priority
+    with patch("bebe.cli.load_user_config", return_value={"registry": "ghcr.io/user"}):
+        assert resolve_registry(Args(), config) == "ghcr.io/user"
+
+    # Test Case 3: Environment Variable Priority
+    monkeypatch.setenv("BEBE_REGISTRY", "ghcr.io/env")
+    with patch("bebe.cli.load_user_config", return_value={"registry": "ghcr.io/user"}):
+        assert resolve_registry(Args(), config) == "ghcr.io/env"
+
+    # Test Case 4: CLI Flag Priority (Highest)
+    args_with_flag = Args()
+    args_with_flag.registry = "ghcr.io/cli"
+    assert resolve_registry(args_with_flag, config) == "ghcr.io/cli"
+
+    # Test Case 5: Default (None)
+    assert resolve_registry(Args(), {}) is None
 
 def test_get_image_tag():
     # Correct base tag name extraction
