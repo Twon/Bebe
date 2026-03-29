@@ -1,7 +1,7 @@
 {# LCOV Build Template #}
 
 {% macro build(version) %}
-RUN wget https://github.com/linux-test-project/lcov/releases/download/v{{ version }}/lcov-{{ version }}.tar.gz && \
+RUN wget --progress=dot:giga https://github.com/linux-test-project/lcov/releases/download/v{{ version }}/lcov-{{ version }}.tar.gz && \
     tar -xzf lcov-{{ version }}.tar.gz
 WORKDIR /lcov-{{ version }}
 RUN make install PREFIX=/opt/lcov-{{ version }}

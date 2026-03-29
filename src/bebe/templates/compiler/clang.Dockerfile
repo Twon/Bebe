@@ -11,7 +11,7 @@ RUN cmake ../llvm \
       -DLLVM_TARGETS_TO_BUILD="X86" \
       -DCMAKE_INSTALL_PREFIX=/opt/clang-{{ params.compiler.version }} \
       -G "Ninja" && \
-    cmake --build . --target install -j$(nproc)
+    cmake --build . --target install -j"$(nproc)"
 WORKDIR /
 RUN rm -rf /tmp/llvm-project
 {% endmacro %}

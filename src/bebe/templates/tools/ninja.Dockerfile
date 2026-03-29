@@ -1,5 +1,5 @@
 {% macro build(version) %}
-RUN wget https://github.com/ninja-build/ninja/archive/refs/tags/v{{ version }}.tar.gz -O ninja-{{ version }}.tar.gz && \
+RUN wget --progress=dot:giga https://github.com/ninja-build/ninja/archive/refs/tags/v{{ version }}.tar.gz -O ninja-{{ version }}.tar.gz && \
     tar -xzf ninja-{{ version }}.tar.gz
 WORKDIR /ninja-{{ version }}
 RUN python3 configure.py --bootstrap && \

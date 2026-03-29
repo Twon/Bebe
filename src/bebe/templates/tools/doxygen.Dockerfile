@@ -1,7 +1,7 @@
 {# Doxygen Build Template #}
 
 {% macro build(version) %}
-RUN wget https://github.com/doxygen/doxygen/archive/refs/tags/Release_{{ version.replace('.', '_') }}.tar.gz && \
+RUN wget --progress=dot:giga https://github.com/doxygen/doxygen/archive/refs/tags/Release_{{ version.replace('.', '_') }}.tar.gz && \
     tar -xzf Release_{{ version.replace('.', '_') }}.tar.gz
 WORKDIR /doxygen-Release_{{ version.replace('.', '_') }}/build
 RUN cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/opt/doxygen-{{ version }} .. && \

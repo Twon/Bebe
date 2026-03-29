@@ -10,7 +10,7 @@ RUN ./contrib/download_prerequisites && \
     mkdir build
 WORKDIR /tmp/gcc/build
 RUN ../configure --enable-languages=c,c++ --disable-multilib --prefix=/opt/gcc-{{ params.compiler.version }} && \
-    make -j$(nproc) && \
+    make -j"$(nproc)" && \
     make install-strip
 WORKDIR /
 RUN rm -rf /tmp/gcc
