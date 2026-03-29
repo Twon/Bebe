@@ -153,3 +153,14 @@ def test_run_tag(capsys):
     run_tag(Args())
     captured = capsys.readouterr()
     assert "ghcr.io/test/bebe:ubuntu.gcc14" in captured.out
+
+def test_run_generate(capsys):
+    from bebe.cli import run_generate
+    class Args:
+        config = "configs/ubuntu.gcc14.json"
+    
+    run_generate(Args())
+    captured = capsys.readouterr()
+    assert "FROM ubuntu:24.04 AS build_base" in captured.out
+    assert "AS compiler_stage" in captured.out
+    assert "gcc" in captured.out

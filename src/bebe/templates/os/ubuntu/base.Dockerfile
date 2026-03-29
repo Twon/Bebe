@@ -4,14 +4,15 @@
 {% import 'compiler/' ~ params.compiler.family ~ '.Dockerfile' as compiler %}
 {% endif %}
 
-# --- BUILD BASE STAGE ---
-# This stage installs heavy dependencies and provides a foundation for all builds
 FROM {{ params.os }} AS build_base
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install central build dependencies once
-RUN apt-get update && apt-get install -y \
+# hadolint ignore=DL3008
+RUN apt-get update && apt-get install -y --no-install-recommends \
     wget curl git build-essential cmake ninja-build python3 python3-dev file flex bison lsb-release gnupg ca-certificates \
     libssl-dev zlib1g-dev libffi-dev libsqlite3-dev libbz2-dev libreadline-dev texinfo libgmp-dev libzstd-dev \
     libexpat1-dev libmpfr-dev libmpc-dev libisl-dev libncurses-dev \
@@ -36,14 +37,15 @@ FROM build_base AS compiler_stage
 {{ compiler.build(params) }}
 {% endif %}
 
-# --- RUNTIME BASE STAGE ---
-# This stage is minimal and provides the runtime components
 FROM {{ params.os }} AS runtime_base
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install only minimal runtime dependencies
-RUN apt-get update && apt-get install -y \
+# hadolint ignore=DL3008
+RUN apt-get update && apt-get install -y --no-install-recommends \
     wget curl git ca-certificates gnupg \
     && rm -rf /var/lib/apt/lists/*
 
@@ -52,6 +54,8 @@ RUN apt-get update && apt-get install -y \
 
 # --- FINAL GENERATED IMAGE ---
 FROM {{ state.current_stage }} AS bebe_final
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Initialize LD_LIBRARY_PATH to avoid "UndefinedVar" warnings in tool macros
 ENV LD_LIBRARY_PATH=

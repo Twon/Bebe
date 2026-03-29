@@ -1,12 +1,12 @@
 {% macro build(version) %}
-RUN wget https://www.python.org/ftp/python/{{ version }}/Python-{{ version }}.tgz && \
-    tar -xzf Python-{{ version }}.tgz && \
-    cd Python-{{ version }} && \
-    ./configure --prefix=/opt/python-{{ version }} --enable-optimizations && \
-    make -j$(nproc) && \
-    make install && \
-    cd .. && \
-    rm -rf Python-{{ version }}*
+RUN wget --progress=dot:giga https://www.python.org/ftp/python/{{ version }}/Python-{{ version }}.tgz && \
+    tar -xzf Python-{{ version }}.tgz
+WORKDIR /Python-{{ version }}
+RUN ./configure --prefix=/opt/python-{{ version }} --enable-optimizations && \
+    make -j"$(nproc)" && \
+    make install
+WORKDIR /
+RUN rm -rf /Python-{{ version }}*
 {% endmacro %}
 
 {% macro copy(version) %}

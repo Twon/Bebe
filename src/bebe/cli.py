@@ -185,6 +185,11 @@ def run_download(args):
         logging.error(f"Download failed: {e}")
         sys.exit(1)
 
+def run_generate(args):
+    """Renders and prints the Dockerfile content for a configuration."""
+    dockerfile_content = generate_dockerfile(args.config)
+    print(dockerfile_content)
+
 def run_list(args):
     """Lists all buildable (non-abstract) configurations in a directory."""
     directory = Path(args.directory)
@@ -249,6 +254,11 @@ def main():
     parser_list = subparsers.add_parser('list', parents=[common], help='List buildable configurations')
     parser_list.add_argument('--directory', default='configs', help='Directory to scan for configs')
     parser_list.set_defaults(func=run_list)
+
+    # Generate command (for CI linting/discovery)
+    parser_generate = subparsers.add_parser('generate', parents=[common], help='Output rendered Dockerfile to stdout')
+    parser_generate.add_argument('--config', required=True, help='Configuration JSON file')
+    parser_generate.set_defaults(func=run_generate)
 
 
     if len(sys.argv) == 1:

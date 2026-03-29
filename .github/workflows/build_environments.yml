@@ -68,9 +68,64 @@ jobs:
           CONFIGS=$(bebe list --directory configs)
           echo "configs=$CONFIGS" >> "$GITHUB_OUTPUT"
 
+  lint:
+    name: Lint ${{ matrix.config }}
+    needs: discover-configs
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: ${{ fromJson(needs.discover-configs.outputs.configs) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install BeBe
+        run: pip install .
+
+      - name: Generate Dockerfile
+        run: |
+          # Create a directory to store the generated Dockerfile
+          # Hadolint action expects a file path
+          bebe generate --config ${{ matrix.config }} > Dockerfile.lint
+
+      - name: Run Hadolint
+        id: hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile.lint
+          failure-threshold: warning
+          no-fail: true
+
+      - name: Update Summary
+        env:
+          HADOLINT_RESULTS: ${{ steps.hadolint.outputs.results }}
+          CONFIG_NAME: ${{ matrix.config }}
+        run: |
+          {
+            echo "### Hadolint Lint Results for $CONFIG_NAME"
+            if [ -n "$HADOLINT_RESULTS" ]; then
+              echo "Status: ⚠️ Warnings/Errors found"
+              echo '```'
+              echo "$HADOLINT_RESULTS"
+              echo '```'
+            else
+              echo "Status: ✅ No issues"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if warnings found
+        if: steps.hadolint.outputs.results != ''
+        run: exit 1
+
   build:
     name: Build ${{ matrix.config }}
-    needs: discover-configs
+    needs: [discover-configs, lint]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

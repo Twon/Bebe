@@ -1,14 +1,14 @@
 {# OpenSSL Build Template #}
 
 {% macro build(version) %}
-RUN wget https://www.openssl.org/source/openssl-{{ version }}.tar.gz && \
-    tar -xzf openssl-{{ version }}.tar.gz && \
-    cd openssl-{{ version }} && \
-    ./config --prefix=/opt/openssl-{{ version }} --openssldir=/opt/openssl-{{ version }} && \
-    make -j$(nproc) && \
-    make install && \
-    cd .. && \
-    rm -rf openssl-{{ version }}*
+RUN wget --progress=dot:giga https://www.openssl.org/source/openssl-{{ version }}.tar.gz && \
+    tar -xzf openssl-{{ version }}.tar.gz
+WORKDIR /openssl-{{ version }}
+RUN ./config --prefix=/opt/openssl-{{ version }} --openssldir=/opt/openssl-{{ version }} && \
+    make -j"$(nproc)" && \
+    make install
+WORKDIR /
+RUN rm -rf /openssl-{{ version }}*
 {% endmacro %}
 
 {% macro copy(version) %}

@@ -4,16 +4,16 @@
 {% macro build(params) %}
 # Clone and build GCC from source
 # The version config acts as the branch/tag to checkout
-RUN git clone --depth 1 --branch {{ params.compiler.version }} https://github.com/gcc-mirror/gcc.git /tmp/gcc && \
-    cd /tmp/gcc && \
-    ./contrib/download_prerequisites && \
-    mkdir build && \
-    cd build && \
-    ../configure --enable-languages=c,c++ --disable-multilib --prefix=/opt/gcc-{{ params.compiler.version }} && \
-    make -j$(nproc) && \
-    make install-strip && \
-    cd /tmp && \
-    rm -rf gcc
+RUN git clone --depth 1 --branch {{ params.compiler.version }} https://github.com/gcc-mirror/gcc.git /tmp/gcc
+WORKDIR /tmp/gcc
+RUN ./contrib/download_prerequisites && \
+    mkdir build
+WORKDIR /tmp/gcc/build
+RUN ../configure --enable-languages=c,c++ --disable-multilib --prefix=/opt/gcc-{{ params.compiler.version }} && \
+    make -j"$(nproc)" && \
+    make install-strip
+WORKDIR /
+RUN rm -rf /tmp/gcc
 {% endmacro %}
 
 {% macro copy(params) %}
