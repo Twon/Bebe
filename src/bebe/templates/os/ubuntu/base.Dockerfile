@@ -55,6 +55,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # --- FINAL GENERATED IMAGE ---
 FROM {{ state.current_stage }} AS bebe_final
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # Initialize LD_LIBRARY_PATH to avoid "UndefinedVar" warnings in tool macros
 ENV LD_LIBRARY_PATH=
 
