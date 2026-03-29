@@ -8,15 +8,20 @@ def test_resolve_registry_priority(monkeypatch):
     class Args:
         registry = None
 
-    # Test Case 1: Project Config Default
+    # Ensure a clean state by removing any environmental variables
+    monkeypatch.delenv("BEBE_REGISTRY", raising=False)
+    # Ensure no local user config is picked up
+    monkeypatch.setattr("bebe.cli.load_user_config", lambda: {})
+
+    # Test Case 1: Project Config Default (Low priority)
     config = {"registry": "ghcr.io/project"}
     assert resolve_registry(Args(), config) == "ghcr.io/project"
 
-    # Test Case 2: User Home Config Priority
+    # Test Case 2: User Home Config Priority (Overrides project)
     with patch("bebe.cli.load_user_config", return_value={"registry": "ghcr.io/user"}):
         assert resolve_registry(Args(), config) == "ghcr.io/user"
 
-    # Test Case 3: Environment Variable Priority
+    # Test Case 3: Environment Variable Priority (Overrides home)
     monkeypatch.setenv("BEBE_REGISTRY", "ghcr.io/env")
     with patch("bebe.cli.load_user_config", return_value={"registry": "ghcr.io/user"}):
         assert resolve_registry(Args(), config) == "ghcr.io/env"
@@ -27,6 +32,7 @@ def test_resolve_registry_priority(monkeypatch):
     assert resolve_registry(args_with_flag, config) == "ghcr.io/cli"
 
     # Test Case 5: Default (None)
+    monkeypatch.delenv("BEBE_REGISTRY", raising=False)
     assert resolve_registry(Args(), {}) is None
 
 def test_get_image_tag():

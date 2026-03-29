@@ -12,9 +12,7 @@ import sys
 from pathlib import Path
 
 import jinja2
-
 import os
-import jinja2
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
@@ -126,8 +124,8 @@ def generate_dockerfile(config_path: str) -> str:
 def run_build(args):
     """Generates the Dockerfile and executes the build using the chosen engine."""
     config = load_config(args.config)
-        
-    tag = get_image_tag(args.config, getattr(args, 'registry', None))
+    registry = resolve_registry(args, config)
+    tag = get_image_tag(args.config, registry)
     dockerfile_content = generate_dockerfile(args.config)
     
     if args.verbose:
@@ -158,7 +156,8 @@ def run_build(args):
 def run_shell(args):
     """Launches an interactive shell or runs a command inside the container."""
     config = load_config(args.config)
-    tag = get_image_tag(args.config, getattr(args, 'registry', None))
+    registry = resolve_registry(args, config)
+    tag = get_image_tag(args.config, registry)
     
     cmd = [args.engine, "run", "--rm"]
     
@@ -167,7 +166,7 @@ def run_shell(args):
         cwd = Path.cwd().absolute()
         # Ensure path uses forward slashes for cross-platform docker compatibility
         mount_path = str(cwd).replace('\\', '/')
-        cmd.extend(["-v", f"{Path.cwd()}:/src", "-w", "/src"])
+        cmd.extend(["-v", f"{mount_path}:/src", "-w", "/src"])
     
     if args.command:
         cmd.extend([tag, "bash", "-c", args.command])
