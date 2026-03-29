@@ -1,7 +1,71 @@
 import json
 from pathlib import Path
 
-from bebe.cli import get_image_tag, load_config, generate_dockerfile
+from unittest.mock import patch, mock_open
+from bebe.cli import get_image_tag, load_config, generate_dockerfile, resolve_registry, load_user_config
+
+def test_resolve_registry_priority(monkeypatch):
+    class Args:
+        registry = None
+
+    # Ensure a clean state by removing any environmental variables
+    monkeypatch.delenv("BEBE_REGISTRY", raising=False)
+    # Ensure no local user config is picked up
+    monkeypatch.setattr("bebe.cli.load_user_config", lambda: {})
+
+    # Test Case 1: Project Config Default (Low priority)
+    config = {"registry": "ghcr.io/project"}
+    assert resolve_registry(Args(), config) == "ghcr.io/project"
+
+    # Test Case 2: User Home Config Priority (Overrides project)
+    with patch("bebe.cli.load_user_config", return_value={"registry": "ghcr.io/user"}):
+        assert resolve_registry(Args(), config) == "ghcr.io/user"
+
+    # Test Case 3: Environment Variable Priority (Overrides home)
+    monkeypatch.setenv("BEBE_REGISTRY", "ghcr.io/env")
+    with patch("bebe.cli.load_user_config", return_value={"registry": "ghcr.io/user"}):
+        assert resolve_registry(Args(), config) == "ghcr.io/env"
+
+    # Test Case 4: CLI Flag Priority (Highest)
+    args_with_flag = Args()
+    args_with_flag.registry = "ghcr.io/cli"
+    assert resolve_registry(args_with_flag, config) == "ghcr.io/cli"
+
+    # Test Case 5: Default (None)
+    monkeypatch.delenv("BEBE_REGISTRY", raising=False)
+    assert resolve_registry(Args(), {}) is None
+
+def test_load_user_config_mocked(caplog):
+    """Tests load_user_config without touching the filesystem by mocking open and Path.exists."""
+    mock_data = json.dumps({"registry": "mock-registry"})
+    
+    with patch("bebe.cli.Path") as mock_path_cls:
+        # 1. Setup the virtual home path
+        mock_home = mock_path_cls.home.return_value
+        mock_config_file = mock_home.__truediv__.return_value.__truediv__.return_value
+        
+        # 2. Mock existence of the config file
+        mock_config_file.exists.return_value = True
+        
+        # 3. Mock the contents of the file
+        with patch("builtins.open", mock_open(read_data=mock_data)):
+            config = load_user_config()
+            assert config == {"registry": "mock-registry"}
+
+    # Test Case: File does not exist
+    with patch("bebe.cli.Path") as mock_path_cls:
+        mock_path_cls.home.return_value.__truediv__.return_value.__truediv__.return_value.exists.return_value = False
+        config = load_user_config()
+        assert config == {}
+
+    # Test Case: IOError during opening
+    with patch("bebe.cli.Path") as mock_path_cls:
+        mock_path_cls.home.return_value.__truediv__.return_value.__truediv__.return_value.exists.return_value = True
+        with patch("builtins.open", side_effect=IOError("Permission denied")):
+            config = load_user_config()
+            assert config == {}
+            assert "Failed to load user config" in caplog.text
+            assert "Permission denied" in caplog.text
 
 def test_get_image_tag():
     # Correct base tag name extraction
