@@ -35,7 +35,7 @@ def test_resolve_registry_priority(monkeypatch):
     monkeypatch.delenv("BEBE_REGISTRY", raising=False)
     assert resolve_registry(Args(), {}) is None
 
-def test_load_user_config_mocked():
+def test_load_user_config_mocked(caplog):
     """Tests load_user_config without touching the filesystem by mocking open and Path.exists."""
     mock_data = json.dumps({"registry": "mock-registry"})
     
@@ -57,6 +57,15 @@ def test_load_user_config_mocked():
         mock_path_cls.home.return_value.__truediv__.return_value.__truediv__.return_value.exists.return_value = False
         config = load_user_config()
         assert config == {}
+
+    # Test Case: IOError during opening
+    with patch("bebe.cli.Path") as mock_path_cls:
+        mock_path_cls.home.return_value.__truediv__.return_value.__truediv__.return_value.exists.return_value = True
+        with patch("builtins.open", side_effect=IOError("Permission denied")):
+            config = load_user_config()
+            assert config == {}
+            assert "Failed to load user config" in caplog.text
+            assert "Permission denied" in caplog.text
 
 def test_get_image_tag():
     # Correct base tag name extraction
