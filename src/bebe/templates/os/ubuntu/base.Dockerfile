@@ -4,9 +4,9 @@
 {% import 'compiler/' ~ params.compiler.family ~ '.Dockerfile' as compiler %}
 {% endif %}
 
-# --- BUILD BASE STAGE ---
-# This stage installs heavy dependencies and provides a foundation for all builds
 FROM {{ params.os }} AS build_base
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -37,9 +37,9 @@ FROM build_base AS compiler_stage
 {{ compiler.build(params) }}
 {% endif %}
 
-# --- RUNTIME BASE STAGE ---
-# This stage is minimal and provides the runtime components
 FROM {{ params.os }} AS runtime_base
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV DEBIAN_FRONTEND=noninteractive
 

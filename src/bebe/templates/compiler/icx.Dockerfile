@@ -11,7 +11,8 @@ RUN wget --progress=dot:giga -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-
     | gpg --dearmor | tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null && \
     # hadolint ignore=DL3008
     apt-get update && \
-    apt-get install -y --no-install-recommends intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic
+    apt-get install -y --no-install-recommends intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic && \
+    rm -rf /var/lib/apt/lists/*
 
 ENV CC=icx
 ENV CXX=icpx
