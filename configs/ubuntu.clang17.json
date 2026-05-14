@@ -2,6 +2,6 @@
     "inherits": "base.json",
     "compiler": {
         "family": "clang",
-        "version": "release/18.x"
+        "version": "release/17.x"
     }
 }
