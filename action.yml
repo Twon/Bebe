@@ -32,7 +32,7 @@ runs:
       id: resolve
       shell: bash
       run: |
-        TAG=$(bebe tag --config ${{ inputs.config }} --registry ${{ inputs.registry }})
+        TAG=$(bebe tag --config "$GITHUB_ACTION_PATH/configs/${{ inputs.config }}" --registry ${{ inputs.registry }})
         echo "image=$TAG" >> $GITHUB_OUTPUT
 
     - name: Run Command in BeBe
@@ -41,4 +41,4 @@ runs:
       env:
         BEBE_RUN: ${{ inputs.run }}
       run: |
-        bebe shell --config ${{ inputs.config }} --registry ${{ inputs.registry }} --mount --command "$BEBE_RUN"
+        bebe shell --config "$GITHUB_ACTION_PATH/configs/${{ inputs.config }}" --registry ${{ inputs.registry }} --mount --command "$BEBE_RUN"
