@@ -4,7 +4,9 @@ RUN wget --progress=dot:giga https://www.python.org/ftp/python/{{ version }}/Pyt
 WORKDIR /Python-{{ version }}
 RUN ./configure --prefix=/opt/python-{{ version }} --enable-optimizations && \
     make -j"$(nproc)" && \
-    make install
+    make install && \
+    ln -s python3 /opt/python-{{ version }}/bin/python && \
+    ln -s pip3 /opt/python-{{ version }}/bin/pip
 WORKDIR /
 RUN rm -rf /Python-{{ version }}*
 {% endmacro %}
