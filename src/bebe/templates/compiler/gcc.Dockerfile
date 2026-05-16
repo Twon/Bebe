@@ -23,9 +23,14 @@ COPY --from=compiler_stage /opt/gcc-{{ params.compiler.version }} /opt/gcc-{{ pa
 ENV CC=/opt/gcc-{{ params.compiler.version }}/bin/gcc
 ENV CXX=/opt/gcc-{{ params.compiler.version }}/bin/g++
 
-# Configure dynamic linker for sanitized builds and libstdc++
-RUN echo "/opt/gcc-{{ params.compiler.version }}/lib64" > /etc/ld.so.conf.d/gcc-{{ params.compiler.version | replace('/', '-') }}.conf && \
-    ldconfig
+{% set version_parts = params.compiler.version.split('-') %}
+{% if version_parts|length > 1 %}
+{% set major_version = version_parts[1].split('.')[0] %}
+RUN ln -s /opt/gcc-{{ params.compiler.version }}/bin/gcc /usr/bin/gcc-{{ major_version }} && \
+    ln -s /opt/gcc-{{ params.compiler.version }}/bin/g++ /usr/bin/g++-{{ major_version }} && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-{{ major_version }} 100 \
+    --slave /usr/bin/g++ g++ /usr/bin/g++-{{ major_version }}
+{% endif %}
 
 ENV PATH=/opt/gcc-{{ params.compiler.version }}/bin:$PATH
 {% endmacro %}

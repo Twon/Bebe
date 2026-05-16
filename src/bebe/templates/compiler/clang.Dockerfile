@@ -9,7 +9,10 @@ RUN cmake ../llvm \
       -DCMAKE_BUILD_TYPE=Release \
       -DLLVM_ENABLE_PROJECTS="clang;lld" \
       -DLLVM_TARGETS_TO_BUILD="X86" \
+      -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
       -DCMAKE_INSTALL_PREFIX=/opt/clang-{{ params.compiler.version }} \
+      -DCMAKE_INSTALL_RPATH="/opt/clang-{{ params.compiler.version }}/lib" \
+      -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON \
       -G "Ninja" && \
     cmake --build . --target install -j"$(nproc)"
 WORKDIR /
@@ -23,8 +26,14 @@ COPY --from=compiler_stage /opt/clang-{{ params.compiler.version }} /opt/clang-{
 ENV CC=/opt/clang-{{ params.compiler.version }}/bin/clang
 ENV CXX=/opt/clang-{{ params.compiler.version }}/bin/clang++
 
-RUN echo "/opt/clang-{{ params.compiler.version }}/lib" > /etc/ld.so.conf.d/clang-{{ params.compiler.version | replace('/', '-') }}.conf && \
-    ldconfig
+{% set version_parts = params.compiler.version.split('-') %}
+{% if version_parts|length > 1 %}
+{% set major_version = version_parts[1].split('.')[0] %}
+RUN ln -s /opt/clang-{{ params.compiler.version }}/bin/clang /usr/bin/clang-{{ major_version }} && \
+    ln -s /opt/clang-{{ params.compiler.version }}/bin/clang++ /usr/bin/clang++-{{ major_version }} && \
+    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-{{ major_version }} 100 \
+    --slave /usr/bin/clang++ clang++ /usr/bin/clang++-{{ major_version }}
+{% endif %}
 
 ENV PATH=/opt/clang-{{ params.compiler.version }}/bin:$PATH
 {% endmacro %}
