@@ -1,0 +1,7 @@
+{
+    "inherits": "base.json",
+    "compiler": {
+        "family": "gcc",
+        "version": "releases/gcc-12.5.0"
+    }
+}
