@@ -10,6 +10,8 @@ RUN cmake ../llvm \
       -DLLVM_ENABLE_PROJECTS="clang;lld" \
       -DLLVM_TARGETS_TO_BUILD="X86" \
       -DCMAKE_INSTALL_PREFIX=/opt/clang-{{ params.compiler.version }} \
+      -DCMAKE_INSTALL_RPATH="/opt/clang-{{ params.compiler.version }}/lib" \
+      -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON \
       -G "Ninja" && \
     cmake --build . --target install -j"$(nproc)"
 WORKDIR /
@@ -22,9 +24,6 @@ COPY --from=compiler_stage /opt/clang-{{ params.compiler.version }} /opt/clang-{
 
 ENV CC=/opt/clang-{{ params.compiler.version }}/bin/clang
 ENV CXX=/opt/clang-{{ params.compiler.version }}/bin/clang++
-
-RUN echo "/opt/clang-{{ params.compiler.version }}/lib" > /etc/ld.so.conf.d/clang-{{ params.compiler.version | replace('/', '-') }}.conf && \
-    ldconfig
 
 ENV PATH=/opt/clang-{{ params.compiler.version }}/bin:$PATH
 {% endmacro %}
