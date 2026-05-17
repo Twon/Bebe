@@ -23,9 +23,10 @@ COPY --from=compiler_stage /opt/gcc-{{ params.compiler.version }} /opt/gcc-{{ pa
 ENV CC=/opt/gcc-{{ params.compiler.version }}/bin/gcc
 ENV CXX=/opt/gcc-{{ params.compiler.version }}/bin/g++
 
-{% set version_parts = params.compiler.version.split('-') %}
-{% if version_parts|length > 1 %}
-{% set major_version = version_parts[1].split('.')[0] %}
+{% set base_version = params.compiler.version.split('/') | last | replace('gcc-', '') %}
+{% set version_parts = base_version.split('.') %}
+{% if version_parts|length > 0 %}
+{% set major_version = version_parts[0] %}
 RUN ln -sf /opt/gcc-{{ params.compiler.version }}/bin/gcc /usr/bin/gcc-{{ major_version }} && \
     ln -sf /opt/gcc-{{ params.compiler.version }}/bin/g++ /usr/bin/g++-{{ major_version }} && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-{{ major_version }} 100 \

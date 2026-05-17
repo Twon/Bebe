@@ -32,9 +32,10 @@ COPY --from=compiler_stage /opt/clang-{{ params.compiler.version }} /opt/clang-{
 ENV CC=/opt/clang-{{ params.compiler.version }}/bin/clang
 ENV CXX=/opt/clang-{{ params.compiler.version }}/bin/clang++
 
-{% set version_parts = params.compiler.version.split('-') %}
-{% if version_parts|length > 1 %}
-{% set major_version = version_parts[1].split('.')[0] %}
+{% set base_version = params.compiler.version.split('/') | last %}
+{% set version_parts = base_version.split('.') %}
+{% if version_parts|length > 0 %}
+{% set major_version = version_parts[0] %}
 RUN ln -sf /opt/clang-{{ params.compiler.version }}/bin/clang /usr/bin/clang-{{ major_version }} && \
     ln -sf /opt/clang-{{ params.compiler.version }}/bin/clang++ /usr/bin/clang++-{{ major_version }} && \
     update-alternatives --install /usr/bin/clang clang /usr/bin/clang-{{ major_version }} 100 \
