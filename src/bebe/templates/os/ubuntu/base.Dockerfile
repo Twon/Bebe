@@ -46,7 +46,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install only minimal runtime dependencies
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget curl git ca-certificates gnupg \
+    wget curl git ca-certificates gnupg build-essential libc6-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Initialize current_stage state for chained builds
