@@ -17,7 +17,10 @@ RUN cmake ../llvm \
       -DCMAKE_INSTALL_RPATH="/opt/clang-{{ params.compiler.version }}/lib" \
       -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON \
       -G "Ninja" && \
-    cmake --build . --target install -j"$(nproc)"
+    cmake --build . --target install -j"$(nproc)" && \
+    if [ -d /opt/clang-{{ params.compiler.version }}/include/x86_64-unknown-linux-gnu/c++/v1 ]; then \
+        cp -a /opt/clang-{{ params.compiler.version }}/include/x86_64-unknown-linux-gnu/c++/v1/* /opt/clang-{{ params.compiler.version }}/include/c++/v1/ || true; \
+    fi
 WORKDIR /
 RUN rm -rf /tmp/llvm-project
 {% endmacro %}
