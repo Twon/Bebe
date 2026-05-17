@@ -7,9 +7,9 @@ RUN git clone --depth 1 --branch {{ params.compiler.version }} https://github.co
 WORKDIR /tmp/llvm-project/build
 RUN cmake ../llvm \
       -DCMAKE_BUILD_TYPE=Release \
-      -DLLVM_ENABLE_PROJECTS="clang;lld" \
+      -DLLVM_ENABLE_PROJECTS="clang;lld;compiler-rt" \
       -DLLVM_TARGETS_TO_BUILD="X86" \
-      -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind" \
+      -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
       -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF \
       -DLLVM_INCLUDE_TESTS=OFF \
       -DLLVM_INCLUDE_BENCHMARKS=OFF \
