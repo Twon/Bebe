@@ -9,7 +9,10 @@ RUN cmake ../llvm \
       -DCMAKE_BUILD_TYPE=Release \
       -DLLVM_ENABLE_PROJECTS="clang;lld" \
       -DLLVM_TARGETS_TO_BUILD="X86" \
-      -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
+      -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind" \
+      -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF \
+      -DLLVM_INCLUDE_TESTS=OFF \
+      -DLLVM_INCLUDE_BENCHMARKS=OFF \
       -DCMAKE_INSTALL_PREFIX=/opt/clang-{{ params.compiler.version }} \
       -DCMAKE_INSTALL_RPATH="/opt/clang-{{ params.compiler.version }}/lib" \
       -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON \
