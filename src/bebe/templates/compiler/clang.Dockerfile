@@ -46,7 +46,8 @@ ENV CC=/usr/bin/clang-{{ major_version }}
 ENV CXX=/usr/bin/clang++-{{ major_version }}
 
 # Dynamically locate the custom Clang directory under /opt, create symlinks, and configure Clang cfg files locally
-RUN COMPILER_DIR=$(find /opt -maxdepth 1 -name "clang-*" | head -n 1) && \
+RUN COMPILER_DIR=$(find /opt -maxdepth 1 -type d -name "clang-*" | head -n 1) && \
+    ln -sf $COMPILER_DIR /opt/clang-{{ base_version }} && \
     ln -sf $COMPILER_DIR/bin/clang /usr/bin/clang-{{ major_version }} && \
     ln -sf $COMPILER_DIR/bin/clang++ /usr/bin/clang++-{{ major_version }} && \
     update-alternatives --install /usr/bin/clang clang /usr/bin/clang-{{ major_version }} 100 \
