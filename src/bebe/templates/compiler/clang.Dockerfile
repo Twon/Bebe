@@ -15,13 +15,13 @@ RUN cmake ../llvm \
       -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF \
       -DLLVM_INCLUDE_TESTS=OFF \
       -DLLVM_INCLUDE_BENCHMARKS=OFF \
-      -DCMAKE_INSTALL_PREFIX=/opt/clang-{{ major_version }} \
-      -DCMAKE_INSTALL_RPATH="/opt/clang-{{ major_version }}/lib" \
+      -DCMAKE_INSTALL_PREFIX=/opt/clang-{{ base_version }} \
+      -DCMAKE_INSTALL_RPATH="/opt/clang-{{ base_version }}/lib" \
       -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON \
       -G "Ninja" && \
     cmake --build . --target install -j"$(nproc)" && \
-    if [ -d /opt/clang-{{ major_version }}/include/x86_64-unknown-linux-gnu/c++/v1 ]; then \
-        cp -a /opt/clang-{{ major_version }}/include/x86_64-unknown-linux-gnu/c++/v1/* /opt/clang-{{ major_version }}/include/c++/v1/ || true; \
+    if [ -d /opt/clang-{{ base_version }}/include/x86_64-unknown-linux-gnu/c++/v1 ]; then \
+        cp -a /opt/clang-{{ base_version }}/include/x86_64-unknown-linux-gnu/c++/v1/* /opt/clang-{{ base_version }}/include/c++/v1/ || true; \
     fi
 WORKDIR /
 RUN rm -rf /tmp/llvm-project
@@ -31,15 +31,18 @@ RUN rm -rf /tmp/llvm-project
 {% set base_version = params.compiler.version.split('/') | last | replace('llvmorg-', '') %}
 {% set major_version = base_version.split('.')[0] %}
 # Copy the compiled Clang compiler from the build stage
-COPY --from=compiler_stage /opt/clang-{{ major_version }} /opt/clang-{{ major_version }}
+COPY --from=compiler_stage /opt/clang-{{ base_version }} /opt/clang-{{ base_version }}
 
-ENV CC=/opt/clang-{{ major_version }}/bin/clang
-ENV CXX=/opt/clang-{{ major_version }}/bin/clang++
+ENV CC=/opt/clang-{{ base_version }}/bin/clang
+ENV CXX=/opt/clang-{{ base_version }}/bin/clang++
 
-RUN ln -sf /opt/clang-{{ major_version }}/bin/clang /usr/bin/clang-{{ major_version }} && \
-    ln -sf /opt/clang-{{ major_version }}/bin/clang++ /usr/bin/clang++-{{ major_version }} && \
+RUN ln -sf /opt/clang-{{ base_version }}/bin/clang /usr/bin/clang-{{ major_version }} && \
+    ln -sf /opt/clang-{{ base_version }}/bin/clang++ /usr/bin/clang++-{{ major_version }} && \
     update-alternatives --install /usr/bin/clang clang /usr/bin/clang-{{ major_version }} 100 \
     --slave /usr/bin/clang++ clang++ /usr/bin/clang++-{{ major_version }}
 
-ENV PATH=/opt/clang-{{ major_version }}/bin:$PATH
+# Configure dynamic linker search path for custom compiled LLVM runtimes (libc++, libunwind)
+RUN echo "/opt/clang-{{ base_version }}/lib" > /etc/ld.so.conf.d/clang-{{ major_version }}.conf && ldconfig
+
+ENV PATH=/opt/clang-{{ base_version }}/bin:$PATH
 {% endmacro %}
