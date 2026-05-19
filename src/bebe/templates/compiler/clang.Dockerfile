@@ -29,7 +29,8 @@ RUN MAJOR=$(grep -E 'set\(LLVM_VERSION_MAJOR' llvm/CMakeLists.txt | tr -cd '0-9'
     cmake --build . --target install -j"$(nproc)" && \
     if [ -d "/opt/clang-${VERSION}/include/x86_64-unknown-linux-gnu/c++/v1" ]; then \
         cp -a "/opt/clang-${VERSION}/include/x86_64-unknown-linux-gnu/c++/v1/"* "/opt/clang-${VERSION}/include/c++/v1/" || true; \
-    fi
+    fi && \
+    ln -s "/opt/clang-${VERSION}" /opt/clang-built
 WORKDIR /
 RUN rm -rf /tmp/llvm-project
 {% endmacro %}
@@ -37,14 +38,16 @@ RUN rm -rf /tmp/llvm-project
 {% macro copy(params) %}
 {% set base_version = params.compiler.version.split('/') | last | replace('llvmorg-', '') %}
 {% set major_version = base_version.split('.')[0] %}
-# Copy the compiled Clang compiler from the build stage
-COPY --from=compiler_stage /opt/ /opt/
+# Copy the compiled Clang compiler from the build stage explicitly
+COPY --from=compiler_stage /opt/clang-built /opt/clang-built
 
 ENV CC=/usr/bin/clang-{{ major_version }}
 ENV CXX=/usr/bin/clang++-{{ major_version }}
 
-# Dynamically locate the custom Clang directory under /opt, create symlinks, and configure Clang cfg files locally
-RUN COMPILER_DIR=$(find /opt -maxdepth 1 -type d -name "clang-*" | head -n 1) && \
+# Rename the explicit copy to its exact versioned path dynamically, create symlinks, and configure Clang cfg files locally
+RUN VERSION=$(/opt/clang-built/bin/clang --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n 1) && \
+    COMPILER_DIR="/opt/clang-${VERSION}" && \
+    mv /opt/clang-built $COMPILER_DIR && \
     ln -sf $COMPILER_DIR/bin/clang /usr/bin/clang-{{ major_version }} && \
     ln -sf $COMPILER_DIR/bin/clang++ /usr/bin/clang++-{{ major_version }} && \
     update-alternatives --install /usr/bin/clang clang /usr/bin/clang-{{ major_version }} 100 \
