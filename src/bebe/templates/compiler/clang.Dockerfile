@@ -29,7 +29,8 @@ RUN MAJOR=$(grep -E 'set\(LLVM_VERSION_MAJOR' llvm/CMakeLists.txt | tr -cd '0-9'
     cmake --build . --target install -j"$(nproc)" && \
     if [ -d "/opt/clang-${VERSION}/include/x86_64-unknown-linux-gnu/c++/v1" ]; then \
         cp -a "/opt/clang-${VERSION}/include/x86_64-unknown-linux-gnu/c++/v1/"* "/opt/clang-${VERSION}/include/c++/v1/" || true; \
-    fi
+    fi && \
+    tar -cf /tmp/clang.tar -C /opt "clang-${VERSION}"
 WORKDIR /
 RUN rm -rf /tmp/llvm-project
 {% endmacro %}
@@ -38,7 +39,8 @@ RUN rm -rf /tmp/llvm-project
 {% set base_version = params.compiler.version.split('/') | last | replace('llvmorg-', '') %}
 {% set major_version = base_version.split('.')[0] %}
 # Copy the compiled Clang compiler from the build stage
-COPY --from=compiler_stage /opt/ /opt/
+COPY --from=compiler_stage /tmp/clang.tar /tmp/clang.tar
+RUN tar -xf /tmp/clang.tar -C /opt && rm /tmp/clang.tar
 
 ENV CC=/usr/bin/clang-{{ major_version }}
 ENV CXX=/usr/bin/clang++-{{ major_version }}
