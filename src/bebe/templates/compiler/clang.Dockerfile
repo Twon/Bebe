@@ -41,8 +41,9 @@ RUN ln -sf /opt/clang-{{ base_version }}/bin/clang /usr/bin/clang-{{ major_versi
     update-alternatives --install /usr/bin/clang clang /usr/bin/clang-{{ major_version }} 100 \
     --slave /usr/bin/clang++ clang++ /usr/bin/clang++-{{ major_version }}
 
-# Configure dynamic linker search path for custom compiled LLVM runtimes (libc++, libunwind)
-RUN echo "/opt/clang-{{ base_version }}/lib" > /etc/ld.so.conf.d/clang-{{ major_version }}.conf && ldconfig
+# Create default configuration files for Clang to automatically inject the runtime library search path (rpath)
+RUN echo "-Wl,-rpath,/opt/clang-{{ base_version }}/lib" > /opt/clang-{{ base_version }}/bin/clang.cfg && \
+    echo "-Wl,-rpath,/opt/clang-{{ base_version }}/lib" > /opt/clang-{{ base_version }}/bin/clang++.cfg
 
 ENV PATH=/opt/clang-{{ base_version }}/bin:$PATH
 {% endmacro %}
