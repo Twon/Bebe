@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget curl git build-essential cmake ninja-build python3 python3-dev file flex bison lsb-release gnupg ca-certificates \
     libssl-dev zlib1g-dev libffi-dev libsqlite3-dev libbz2-dev libreadline-dev texinfo libgmp-dev libzstd-dev liblzma-dev \
     libexpat1-dev libmpfr-dev libmpc-dev libisl-dev libncurses-dev uuid-dev libgdbm-dev libgdbm-compat-dev \
+    libicu-dev libbacktrace-dev binutils-dev libdw-dev \
     && rm -rf /var/lib/apt/lists/*
 
 
