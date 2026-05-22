@@ -14,8 +14,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget curl git build-essential cmake ninja-build python3 python3-dev file flex bison lsb-release gnupg ca-certificates \
-    libssl-dev zlib1g-dev libffi-dev libsqlite3-dev libbz2-dev libreadline-dev texinfo libgmp-dev libzstd-dev \
-    libexpat1-dev libmpfr-dev libmpc-dev libisl-dev libncurses-dev \
+    libssl-dev zlib1g-dev libffi-dev libsqlite3-dev libbz2-dev libreadline-dev texinfo libgmp-dev libzstd-dev liblzma-dev \
+    libexpat1-dev libmpfr-dev libmpc-dev libisl-dev libncurses-dev uuid-dev libgdbm-dev libgdbm-compat-dev \
     && rm -rf /var/lib/apt/lists/*
 
 
@@ -23,6 +23,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # --- TOOLS BUILD STAGE ---
 # This stage is now independent from compiler_stage to allow caching across all compiler images
 FROM build_base AS build_stage
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Build other tools from source
 {% for tool_name, tool_version in params.versions.items() %}
@@ -33,6 +35,9 @@ FROM build_base AS build_stage
 # --- COMPILER BUILD STAGE ---
 # Only builds the compiler from source. This is the heaviest and most cached layer.
 FROM build_base AS compiler_stage
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 {% if params.compiler and compiler %}
 {{ compiler.build(params) }}
 {% endif %}
@@ -46,7 +51,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install only minimal runtime dependencies
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget curl git ca-certificates gnupg build-essential libc6-dev \
+    wget curl git ca-certificates gnupg build-essential libc6-dev xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # Initialize current_stage state for chained builds
