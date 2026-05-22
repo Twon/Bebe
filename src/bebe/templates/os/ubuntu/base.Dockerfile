@@ -48,11 +48,21 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install only minimal runtime dependencies
+# Install minimal runtime dependencies and standard C++ build dependencies
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget curl git ca-certificates gnupg build-essential libc6-dev xz-utils \
+    libicu-dev binutils-dev libdw-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# libbacktrace-dev is not packaged in Ubuntu 24.04 Noble — build from source
+RUN git clone --depth 1 https://github.com/ianlancetaylor/libbacktrace.git /tmp/libbacktrace
+WORKDIR /tmp/libbacktrace
+RUN ./configure --prefix=/usr && \
+    make -j"$(nproc)" && \
+    make install
+WORKDIR /
+RUN rm -rf /tmp/libbacktrace
 
 # Initialize current_stage state for chained builds
 {% set state = namespace(current_stage='runtime_base') %}
