@@ -75,3 +75,19 @@ ENV LD_LIBRARY_PATH=
 {% import 'tools/' ~ tool_name ~ '.Dockerfile' as tool_module with context %}
 {{ tool_module.copy(tool_version) }}
 {% endfor %}
+
+# --- VERIFICATION ---
+# Verify that the configured compilers can actually build code
+RUN echo 'int main() { return 0; }' > /tmp/test.c && \
+    echo -e '#include <iostream>\nint main() { std::cout << "Hello" << std::endl; return 0; }' > /tmp/test.cpp && \
+    if command -v gcc >/dev/null 2>&1; then \
+        echo "Testing GCC..." && \
+        gcc -o /tmp/test_c /tmp/test.c && \
+        g++ -o /tmp/test_cpp /tmp/test.cpp || exit 1; \
+    fi && \
+    if command -v clang >/dev/null 2>&1; then \
+        echo "Testing Clang..." && \
+        clang -o /tmp/test_clang_c /tmp/test.c && \
+        clang++ -stdlib=libc++ -o /tmp/test_clang_cpp /tmp/test.cpp || exit 1; \
+    fi && \
+    rm -f /tmp/test*

@@ -45,8 +45,8 @@ RUN COMPILER_DIR=$(find /opt -maxdepth 1 -type d -name "clang-*" | head -n 1) &&
     ln -sf "$COMPILER_DIR/bin/clang++" /usr/bin/clang++-{{ major_version }} && \
     update-alternatives --install /usr/bin/clang clang /usr/bin/clang-{{ major_version }} 100 \
     --slave /usr/bin/clang++ clang++ /usr/bin/clang++-{{ major_version }} && \
-    echo "-Wl,-rpath,$COMPILER_DIR/lib" > "$COMPILER_DIR/bin/clang.cfg" && \
-    echo "-Wl,-rpath,$COMPILER_DIR/lib" > "$COMPILER_DIR/bin/clang++.cfg"
+    echo "-L$COMPILER_DIR/lib -L$COMPILER_DIR/lib/x86_64-unknown-linux-gnu -Wl,-rpath,$COMPILER_DIR/lib -Wl,-rpath,$COMPILER_DIR/lib/x86_64-unknown-linux-gnu" > "$COMPILER_DIR/bin/clang.cfg" && \
+    cp "$COMPILER_DIR/bin/clang.cfg" "$COMPILER_DIR/bin/clang++.cfg"
 
 ENV CC=/usr/bin/clang-{{ major_version }}
 ENV CXX=/usr/bin/clang++-{{ major_version }}
