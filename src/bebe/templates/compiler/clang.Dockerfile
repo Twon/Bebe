@@ -7,9 +7,9 @@ RUN git clone --depth 1 --branch {{ params.compiler.version }} https://github.co
 WORKDIR /tmp/llvm-project
 
 # Dynamically extract the exact LLVM version from the source CMakeLists.txt
-RUN MAJOR=$(grep -E 'set\(LLVM_VERSION_MAJOR' llvm/CMakeLists.txt | tr -cd '0-9') && \
-    MINOR=$(grep -E 'set\(LLVM_VERSION_MINOR' llvm/CMakeLists.txt | tr -cd '0-9') && \
-    PATCH=$(grep -E 'set\(LLVM_VERSION_PATCH' llvm/CMakeLists.txt | tr -cd '0-9') && \
+RUN MAJOR=$( (cat llvm/CMakeLists.txt cmake/Modules/LLVMVersion.cmake llvm/cmake/modules/LLVMVersion.cmake 2>/dev/null || true) | grep -m 1 -E 'set\(LLVM_VERSION_MAJOR' | tr -cd '0-9') && \
+    MINOR=$( (cat llvm/CMakeLists.txt cmake/Modules/LLVMVersion.cmake llvm/cmake/modules/LLVMVersion.cmake 2>/dev/null || true) | grep -m 1 -E 'set\(LLVM_VERSION_MINOR' | tr -cd '0-9') && \
+    PATCH=$( (cat llvm/CMakeLists.txt cmake/Modules/LLVMVersion.cmake llvm/cmake/modules/LLVMVersion.cmake 2>/dev/null || true) | grep -m 1 -E 'set\(LLVM_VERSION_PATCH' | tr -cd '0-9') && \
     VERSION="${MAJOR}.${MINOR}.${PATCH}" && \
     echo "Building LLVM version: ${VERSION}" && \
     mkdir build && \
