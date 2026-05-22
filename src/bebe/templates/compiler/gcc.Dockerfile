@@ -8,11 +8,12 @@ RUN git clone --depth 1 --branch {{ params.compiler.version }} https://github.co
 WORKDIR /tmp/gcc
 
 # Dynamically extract the exact GCC version from the source BASE-VER file
-RUN VERSION=$(cat gcc/BASE-VER | tr -d '[:space:]') && \
+RUN VERSION=$(tr -d '[:space:]' < gcc/BASE-VER) && \
     echo "Building GCC version: ${VERSION}" && \
     ./contrib/download_prerequisites && \
-    mkdir build && \
-    cd build && \
+    mkdir build
+WORKDIR /tmp/gcc/build
+RUN VERSION=$(tr -d '[:space:]' < ../gcc/BASE-VER) && \
     ../configure --enable-languages=c,c++ --disable-multilib --prefix="/opt/compiler/gcc-${VERSION}" && \
     make -j"$(nproc)" && \
     make install-strip
@@ -28,8 +29,8 @@ COPY --from=compiler_stage /opt/compiler/ /opt/
 
 # Dynamically locate the custom GCC directory under /opt, create symlinks, and configure environment
 RUN COMPILER_DIR=$(find /opt -maxdepth 1 -type d -name "gcc-*" | head -n 1) && \
-    ln -sf $COMPILER_DIR/bin/gcc /usr/bin/gcc-{{ major_version }} && \
-    ln -sf $COMPILER_DIR/bin/g++ /usr/bin/g++-{{ major_version }} && \
+    ln -sf "$COMPILER_DIR/bin/gcc" /usr/bin/gcc-{{ major_version }} && \
+    ln -sf "$COMPILER_DIR/bin/g++" /usr/bin/g++-{{ major_version }} && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-{{ major_version }} 100 \
     --slave /usr/bin/g++ g++ /usr/bin/g++-{{ major_version }}
 
