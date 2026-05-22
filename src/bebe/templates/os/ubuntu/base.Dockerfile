@@ -16,7 +16,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget curl git build-essential cmake ninja-build python3 python3-dev file flex bison lsb-release gnupg ca-certificates \
     libssl-dev zlib1g-dev libffi-dev libsqlite3-dev libbz2-dev libreadline-dev texinfo libgmp-dev libzstd-dev liblzma-dev \
     libexpat1-dev libmpfr-dev libmpc-dev libisl-dev libncurses-dev uuid-dev libgdbm-dev libgdbm-compat-dev \
-    libicu-dev libbacktrace-dev binutils-dev libdw-dev \
     && rm -rf /var/lib/apt/lists/*
 
 
@@ -49,10 +48,13 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install only minimal runtime dependencies
+# Install minimal runtime dependencies and standard C++ build dependencies
 # hadolint ignore=DL3008
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN (sed -i 's/main restricted/main restricted universe multiverse/g' /etc/apt/sources.list.d/ubuntu.sources 2>/dev/null || true) && \
+    (sed -i 's/main restricted/main restricted universe multiverse/g' /etc/apt/sources.list 2>/dev/null || true) && \
+    apt-get update && apt-get install -y --no-install-recommends \
     wget curl git ca-certificates gnupg build-essential libc6-dev xz-utils \
+    libicu-dev libbacktrace-dev binutils-dev libdw-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Initialize current_stage state for chained builds
