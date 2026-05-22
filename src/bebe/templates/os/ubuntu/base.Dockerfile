@@ -24,6 +24,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # This stage is now independent from compiler_stage to allow caching across all compiler images
 FROM build_base AS build_stage
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # Build other tools from source
 {% for tool_name, tool_version in params.versions.items() %}
 {% import 'tools/' ~ tool_name ~ '.Dockerfile' as tool_module with context %}
@@ -33,6 +35,9 @@ FROM build_base AS build_stage
 # --- COMPILER BUILD STAGE ---
 # Only builds the compiler from source. This is the heaviest and most cached layer.
 FROM build_base AS compiler_stage
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 {% if params.compiler and compiler %}
 {{ compiler.build(params) }}
 {% endif %}

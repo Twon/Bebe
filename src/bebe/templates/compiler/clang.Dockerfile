@@ -13,8 +13,7 @@ RUN MAJOR=$(grep -E 'set\(LLVM_VERSION_MAJOR' llvm/CMakeLists.txt | tr -cd '0-9'
     VERSION="${MAJOR}.${MINOR}.${PATCH}" && \
     echo "Building LLVM version: ${VERSION}" && \
     mkdir build && \
-    cd build && \
-    cmake ../llvm \
+    cmake -S llvm -B build \
       -DCMAKE_BUILD_TYPE=Release \
       -DLLVM_ENABLE_PROJECTS="clang;lld;compiler-rt" \
       -DLLVM_TARGETS_TO_BUILD="X86" \
@@ -26,7 +25,7 @@ RUN MAJOR=$(grep -E 'set\(LLVM_VERSION_MAJOR' llvm/CMakeLists.txt | tr -cd '0-9'
       -DCMAKE_INSTALL_RPATH="/opt/clang-${VERSION}/lib" \
       -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON \
       -G "Ninja" && \
-    cmake --build . --target install -j"$(nproc)" && \
+    cmake --build build --target install -j"$(nproc)" && \
     if [ -d "/opt/compiler/clang-${VERSION}/include/x86_64-unknown-linux-gnu/c++/v1" ]; then \
         cp -a "/opt/compiler/clang-${VERSION}/include/x86_64-unknown-linux-gnu/c++/v1/"* "/opt/compiler/clang-${VERSION}/include/c++/v1/" || true; \
     fi
@@ -42,12 +41,12 @@ COPY --from=compiler_stage /opt/compiler/ /opt/
 
 # Dynamically locate the custom Clang directory under /opt, create symlinks, and configure Clang cfg files locally
 RUN COMPILER_DIR=$(find /opt -maxdepth 1 -type d -name "clang-*" | head -n 1) && \
-    ln -sf $COMPILER_DIR/bin/clang /usr/bin/clang-{{ major_version }} && \
-    ln -sf $COMPILER_DIR/bin/clang++ /usr/bin/clang++-{{ major_version }} && \
+    ln -sf "$COMPILER_DIR/bin/clang" /usr/bin/clang-{{ major_version }} && \
+    ln -sf "$COMPILER_DIR/bin/clang++" /usr/bin/clang++-{{ major_version }} && \
     update-alternatives --install /usr/bin/clang clang /usr/bin/clang-{{ major_version }} 100 \
     --slave /usr/bin/clang++ clang++ /usr/bin/clang++-{{ major_version }} && \
-    echo "-Wl,-rpath,$COMPILER_DIR/lib" > $COMPILER_DIR/bin/clang.cfg && \
-    echo "-Wl,-rpath,$COMPILER_DIR/lib" > $COMPILER_DIR/bin/clang++.cfg
+    echo "-Wl,-rpath,$COMPILER_DIR/lib" > "$COMPILER_DIR/bin/clang.cfg" && \
+    echo "-Wl,-rpath,$COMPILER_DIR/lib" > "$COMPILER_DIR/bin/clang++.cfg"
 
 ENV CC=/usr/bin/clang-{{ major_version }}
 ENV CXX=/usr/bin/clang++-{{ major_version }}
