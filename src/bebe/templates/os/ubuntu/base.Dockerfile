@@ -58,7 +58,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # libbacktrace-dev is not packaged in Ubuntu 24.04 Noble — build from source
 RUN git clone --depth 1 https://github.com/ianlancetaylor/libbacktrace.git /tmp/libbacktrace
 WORKDIR /tmp/libbacktrace
-RUN ./configure --prefix=/usr --libdir=/usr/lib/x86_64-linux-gnu && \
+RUN ./configure --prefix=/usr --libdir=/usr/lib/x86_64-linux-gnu --enable-shared && \
     make -j"$(nproc)" && \
     make install
 WORKDIR /
